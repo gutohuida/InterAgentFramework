@@ -1,0 +1,8 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include src/interagent/templates *
+recursive-include examples *.py *.sh *.bat *.md
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
