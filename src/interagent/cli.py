@@ -85,11 +85,28 @@ interagent summary
 - `shared/` - Shared context and decisions
 """)
         
+        # Write AGENTS.md — the collaboration guide both agents read on session start
+        delegate = next((a for a in VALID_AGENTS if a != session.principal), "kimi")
+        try:
+            agents_guide = (
+                get_template("agents_guide")
+                .replace("{principal}", session.principal)
+                .replace("{delegate}", delegate)
+                .replace("{mode}", session.mode)
+            )
+            agents_path = INTERAGENT_DIR / "AGENTS.md"
+            with open(agents_path, "w", encoding="utf-8") as f:
+                f.write(agents_guide)
+        except FileNotFoundError:
+            pass  # Non-fatal: AGENTS.md is helpful but not required
+
         print_success(f"Initialized session: {session.name}")
         print(f"   ID: {session.id}")
         print(f"   Mode: {session.mode}")
         print(f"   Principal: {session.principal}")
         print(f"\n[DIR] Created .interagent/ directory")
+        print("     .interagent/AGENTS.md   <- agents read this for the collaboration guide")
+        print("     .interagent/shared/context.md  <- fill this with project details")
         print("\nNext steps:")
         print("1. Edit .interagent/shared/context.md with project details")
         print("2. Quick start: interagent quick --to kimi \"Your task\"")
@@ -252,6 +269,8 @@ def cmd_relay(args: argparse.Namespace) -> int:
     print(f"@{agent} - You have work in the InterAgent collaboration system.")
     print()
     print(f"Your role: {role}")
+    print(f"Collaboration guide: read .interagent/AGENTS.md for commands, workflow, and protocol.")
+    print(f"Project context: read .interagent/shared/context.md before starting.")
     print()
     
     if pending_tasks:

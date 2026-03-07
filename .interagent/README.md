@@ -1,6 +1,6 @@
-# InterAgent Session: Test
+# InterAgent Session: InterAgentFramework
 
-**ID:** session-685251  
+**ID:** session-d261a9  
 **Mode:** hierarchical  
 **Principal:** claude
 
