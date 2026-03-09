@@ -6,16 +6,13 @@
 
 > **A collaboration framework for Claude Code and Kimi Code**
 
-InterAgent lets Claude Code and Kimi Code work together on the same project.
-After a one-time setup, you orchestrate everything through **natural language prompts** —
-no manual CLI commands required during your session.
+InterAgent lets Claude Code and Kimi Code work together on the same project — on the same machine or across machines. After a one-time setup, you orchestrate everything through **natural language prompts** — no manual CLI commands required during your session.
 
 ---
 
 ## How It Works
 
-InterAgent creates a shared `.interagent/` directory that both agents use as a
-communication channel. The user acts as the messenger, passing relay prompts between agents.
+InterAgent creates a shared `.interagent/` directory that both agents use as a communication channel. The user acts as the messenger, passing relay prompts between agents.
 
 ```
 You (setup once)
@@ -47,8 +44,7 @@ Claude (runs CLI via Bash automatically)
   └─ [reviews Kimi's work and continues]
 ```
 
-**The only manual step is pasting the relay prompt into Kimi.** Both agents handle
-all CLI commands themselves — you just have a conversation.
+**The only manual step is pasting the relay prompt into Kimi.** Both agents handle all CLI commands themselves — you just have a conversation.
 
 ---
 
@@ -74,8 +70,7 @@ This creates:
 
 ### 3. Fill in project context
 
-Edit `.interagent/shared/context.md` and paste in your project description, current state,
-and any constraints. Both agents read this at the start of every task.
+Edit `.interagent/shared/context.md` and paste in your project description, current state, and any constraints. Both agents read this at the start of every task.
 
 ### 4. Start working — just prompt Claude
 
@@ -84,8 +79,122 @@ From this point, use natural language. Claude handles the CLI:
 > "Claude, read `.interagent/AGENTS.md` to understand how we're collaborating,
 > then delegate the database schema design to Kimi."
 
-Claude will run `interagent quick` and `interagent relay` via Bash, then show you
-a prompt to paste into Kimi Code.
+Claude will run `interagent quick` and `interagent relay` via Bash, then show you a prompt to paste into Kimi Code.
+
+---
+
+## Cross-Machine Collaboration (v0.2.0+)
+
+By default, InterAgent works on a single machine via the local `.interagent/` directory. If your collaborator is on a different machine, enable **Git transport** with one command:
+
+```bash
+interagent transport setup --type git
+```
+
+This creates an orphan branch (`interagent/collab`) on your git remote. Messages and tasks are synced through it using git plumbing — your working tree and current branch are never touched.
+
+### How to set up cross-machine
+
+```bash
+# Both developers run this (same git remote required):
+interagent transport setup --type git --remote origin
+
+# Check status
+interagent transport status
+
+# Force-fetch latest messages
+interagent transport pull
+
+# Revert to local-only
+interagent transport disable
+```
+
+All existing commands (`quick`, `inbox`, `relay`, `task`, etc.) work identically — transport is transparent.
+
+### Start watching for incoming messages
+
+```bash
+interagent-watch
+```
+
+Automatically adapts to the active transport. For git transport, polls every 10 seconds instead of 5.
+
+---
+
+## Commands Reference
+
+### Session
+
+```bash
+interagent init --project "Name" --principal claude   # Initialize
+interagent status                                      # Full status
+interagent summary                                     # Quick overview
+```
+
+### Delegation
+
+```bash
+interagent quick --to kimi "Task description"         # Create + assign task
+interagent relay --agent kimi                         # Generate relay prompt
+interagent relay --agent claude                       # Generate relay for Claude
+```
+
+### Tasks
+
+```bash
+interagent task list                                  # List all tasks
+interagent task show <task_id>                        # View task details
+interagent task update <task_id> --status in_progress
+interagent task update <task_id> --status completed
+interagent task update <task_id> --status approved
+interagent task update <task_id> --status needs_revision --note "Fix X"
+```
+
+### Messaging
+
+```bash
+interagent inbox --agent claude                       # Check Claude's inbox
+interagent inbox --agent kimi                         # Check Kimi's inbox
+interagent msg send --to claude --subject "Done" --message "Implemented X"
+```
+
+### Transport (cross-machine)
+
+```bash
+interagent transport setup --type git                 # Enable git transport
+interagent transport status                           # Show active transport
+interagent transport pull                             # Force immediate fetch
+interagent transport disable                          # Revert to local
+```
+
+### Template Maintenance
+
+```bash
+interagent update-template --agent claude --template-path ~/projects/template.txt
+interagent update-template --agent claude --focus "sub-agents"
+```
+
+---
+
+## What Gets Created on Init
+
+```
+.interagent/
+├── AGENTS.md             # Collaboration guide — both agents read this
+├── README.md             # Quick command reference
+├── session.json          # Session config (id, mode, principal)
+├── shared/
+│   └── context.md        # Project state — fill this with your project description
+├── tasks/
+│   ├── active/           # JSON files for each active task
+│   └── completed/        # Archived completed tasks
+├── messages/
+│   ├── pending/          # Unread messages
+│   └── archive/          # Message history
+└── agents/               # Agent status files
+```
+
+`.interagent/AGENTS.md` is the key file. Both Claude and Kimi read it on every session start to understand their roles, available commands, and the collaboration protocol.
 
 ---
 
@@ -128,20 +237,6 @@ Project context: read .interagent/shared/context.md before starting.
 
 ---
 
-### Kimi Receiving Work
-
-When Kimi receives the relay prompt, it:
-1. Reads `.interagent/AGENTS.md` for the full collaboration guide and command reference
-2. Reads `.interagent/shared/context.md` for project context
-3. Runs `interagent inbox --agent kimi` to see the task
-4. Does the work
-5. Reports back via `interagent msg send --to claude --subject "Done" --message "..."`
-
-All of this happens automatically — Kimi doesn't need to be told how the system works
-because AGENTS.md explains it.
-
----
-
 ### Getting Kimi's Work Back to Claude
 
 When Kimi is done:
@@ -155,154 +250,17 @@ interagent inbox --agent claude
 interagent summary
 ```
 
-Claude reviews Kimi's messages and completed tasks, then continues reviewing or
-assigns the next task.
-
----
-
-### Asking for a Status Check
-
-**You → Claude:**
-> "What's the current state of the project?"
-
-**Claude does automatically:**
-```bash
-interagent status
-interagent summary
-```
-
----
-
-### Cross-Agent Sub-Agent Requests
-
-Either agent can ask the other to run one of their specialized sub-agents.
-
-**Example — Claude asking Kimi to do web research:**
-
-Claude writes `.interagent/shared/agent-request-research.md`:
-```
-Kimi: research latest best practices for JWT refresh token rotation (2026)
-Write summary to: .interagent/shared/jwt-research.md
-```
-
-Then Claude tells you: *"Tell Kimi to check `.interagent/shared/` for a new request."*
-
-You paste one message into Kimi. Kimi handles it. No further orchestration needed.
-
----
-
-## Setup for New Projects (Using the Kickoff Template)
-
-If you use the [project kickoff template](https://github.com/gutohuida/InterAgentFramework),
-the generated `CLAUDE.md` automatically includes the multi-agent workflow rules:
-
-- Claude checks for `.interagent/session.json` on every session start
-- If found, Claude reads `AGENTS.md` and `context.md` automatically
-- Claude runs all `interagent` commands via Bash without being asked
-
-This means on any future session, you can start with:
-> "Check the InterAgent session and tell me what's pending."
-
-And Claude will handle the rest.
-
----
-
-## Commands Reference
-
-### Session
-
-```bash
-interagent init --project "Name" --principal claude   # Initialize
-interagent status                                      # Full status
-interagent summary                                     # Quick overview
-```
-
-### Delegation
-
-```bash
-interagent quick --to kimi "Task description"         # Create + assign task
-interagent relay --agent kimi                         # Generate relay prompt
-interagent relay --agent claude                       # Generate relay for Claude
-```
-
-### Tasks
-
-```bash
-interagent task list                                  # List all tasks
-interagent task show <task_id>                        # View task details
-interagent task update <task_id> --status in_progress
-interagent task update <task_id> --status completed
-interagent task update <task_id> --status approved
-interagent task update <task_id> --status needs_revision --note "Fix X"
-```
-
-### Messaging
-
-```bash
-interagent inbox --agent claude                       # Check Claude's inbox
-interagent inbox --agent kimi                         # Check Kimi's inbox
-interagent msg send --to claude --subject "Done" --message "Implemented X"
-```
-
-### Template Maintenance
-
-Keep your project kickoff template current with new AI capabilities:
-
-```bash
-interagent update-template --agent claude --template-path ~/projects/template.txt
-interagent update-template --agent kimi   --template-path ~/projects/template.txt
-interagent update-template --agent claude --focus "sub-agents"
-```
-
-The generated prompt instructs the agent to search for new best practices,
-review the current template, apply improvements, and write a `TEMPLATE_UPDATE.md`.
-
----
-
-## What Gets Created on Init
-
-```
-.interagent/
-├── AGENTS.md             # Collaboration guide — both agents read this
-├── README.md             # Quick command reference
-├── session.json          # Session config (id, mode, principal)
-├── shared/
-│   └── context.md        # Project state — fill this with your project description
-├── tasks/
-│   ├── active/           # JSON files for each active task
-│   └── completed/        # Archived completed tasks
-├── messages/
-│   ├── pending/          # Unread messages
-│   └── archive/          # Message history
-└── agents/               # Agent status files
-```
-
-`.interagent/AGENTS.md` is the key file. Both Claude and Kimi read it on every
-session start to understand their roles, available commands, and the collaboration protocol.
-
 ---
 
 ## Safety Features
 
-**File locking** — prevents race conditions when both agents work simultaneously.
-Tasks and messages use file-based mutexes with a 5-minute automatic timeout.
+**File locking** — prevents race conditions when both agents work simultaneously. Tasks and messages use file-based mutexes with a 5-minute automatic timeout.
 
-**Schema validation** — all JSON state files are validated before saving.
-Agent names, task statuses, and required fields are enforced.
+**Schema validation** — all JSON state files are validated before saving. Agent names, task statuses, and required fields are enforced.
 
 **Input sanitization** — string length limits and type coercion before any write.
 
----
-
-## Watchdog (Optional)
-
-Run in a separate terminal to get notifications when tasks or messages change:
-
-```bash
-interagent-watch
-```
-
-Useful if you want to know when Kimi has finished without actively checking.
+**Conflict-free git sync** — GitTransport appends files with UUID-suffixed names; two machines can never produce the same filename. Push conflicts are retried automatically.
 
 ---
 
@@ -315,6 +273,18 @@ Useful if you want to know when Kimi has finished without actively checking.
 
 In hierarchical mode (default), Claude assigns work and reviews results.
 In peer mode, both agents can assign tasks to each other.
+
+---
+
+## Roadmap
+
+| Phase | Status | Description |
+|---|---|---|
+| Local transport | Done | Single-machine via `.interagent/` filesystem |
+| Git transport | Done (v0.2.0) | Cross-machine via orphan branch, zero infra |
+| InterAgent Hub | Planned | MCP server for multi-team collaboration, web dashboard |
+
+The Hub (Phase 3) will be an **MCP server** — Claude Code and Kimi Code connect to it as a native MCP tool provider, enabling real-time delivery without polling and a web dashboard for project oversight. See [ROADMAP.md](ROADMAP.md) for the full plan.
 
 ---
 
@@ -335,25 +305,22 @@ pip install -e .
 ## FAQ
 
 **Q: Do I need to run CLI commands during my session?**
-No. After `interagent init`, just talk to Claude. It runs all `interagent` commands
-via Bash automatically. The only manual step is pasting the relay prompt into Kimi.
+No. After `interagent init`, just talk to Claude. It runs all `interagent` commands via Bash automatically. The only manual step is pasting the relay prompt into Kimi.
 
 **Q: How does Kimi know how to use the system?**
-`interagent init` writes `.interagent/AGENTS.md` — a complete guide covering commands,
-workflow, and protocol. The relay prompt tells Kimi to read it before starting work.
+`interagent init` writes `.interagent/AGENTS.md` — a complete guide covering commands, workflow, and protocol. The relay prompt tells Kimi to read it before starting work.
 
 **Q: Should I commit `.interagent/` to Git?**
-Partially. The `.gitignore` included with the project excludes runtime state
-(tasks, messages, session.json) but keeps AGENTS.md and README.md.
-This gives you documentation without committing transient data.
+Partially. The `.gitignore` excludes runtime state (tasks, messages, session.json, transport.json) but keeps AGENTS.md and README.md. This gives you documentation without committing transient data.
 
 **Q: Can I use this with just Claude (no Kimi)?**
-Yes — just skip the relay step. The session, task, and summary commands are
-useful even for single-agent projects to track progress.
+Yes — just skip the relay step. The session, task, and summary commands are useful even for single-agent projects to track progress.
+
+**Q: Do both developers need the same git remote for cross-machine sync?**
+Yes. Git transport requires a shared remote (e.g. `origin`). One developer runs `interagent transport setup --type git` to create the orphan branch, then the other runs the same command to connect to it.
 
 **Q: What if Kimi doesn't have terminal access?**
-The relay prompt includes the task details inline, so Kimi can read and respond
-without running any commands. The collaboration is less structured but still works.
+The relay prompt includes the task details inline, so Kimi can read and respond without running any commands. The collaboration is less structured but still works.
 
 ---
 
@@ -362,6 +329,7 @@ without running any commands. The collaboration is less structured but still wor
 - **GitHub:** https://github.com/gutohuida/InterAgentFramework
 - **PyPI:** https://pypi.org/project/interagent-framework/
 - **Issues:** https://github.com/gutohuida/InterAgentFramework/issues
+- **Roadmap:** [ROADMAP.md](ROADMAP.md)
 
 ---
 
