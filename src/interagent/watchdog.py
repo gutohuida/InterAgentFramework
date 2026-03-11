@@ -3,8 +3,7 @@
 import subprocess
 import time
 import sys
-from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from .constants import MESSAGES_PENDING_DIR, TASKS_ACTIVE_DIR
 from .utils import load_json
