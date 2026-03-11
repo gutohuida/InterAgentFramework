@@ -6,45 +6,31 @@
 
 > **A collaboration framework for N AI agents — Claude, Kimi, Gemini, Codex, and more**
 
-InterAgent lets multiple AI agents work together on the same project — on the same machine or across machines. After a one-time setup, you orchestrate everything through **natural language prompts** — no manual CLI commands required during your session.
+InterAgent lets multiple AI agents work together on the same project. Agents communicate through a shared `.interagent/` directory and a local MCP server. With MCP enabled, agents call `send_message` and `get_inbox` as native tools — **no manual relay needed**.
 
 ---
 
-## How It Works
+## Two Modes
 
-InterAgent creates a shared `.interagent/` directory that all agents use as a communication channel. The user acts as the messenger, passing relay prompts between agents.
+### Mode 1 — Manual relay (zero extra setup)
+
+The original mode. You paste a relay prompt from Claude into Kimi, and back. Works with no dependencies beyond the base package.
+
+### Mode 2 — Zero-relay with MCP (recommended)
+
+Install the MCP extras, run two background watchers, and agents communicate autonomously. The loop:
 
 ```
-You (setup once)
-  └─ interagent init --project "My App" --principal claude
-
-You (natural language)
-  └─ "Claude, delegate the auth module to Kimi"
-
-Claude (runs CLI via Bash automatically)
-  └─ interagent quick --to kimi "Implement auth module"
-  └─ interagent relay --agent kimi
-  └─ [shows you the relay prompt to paste into Kimi]
-
-You
-  └─ paste relay prompt into Kimi Code
-
-Kimi (reads AGENTS.md + context.md, runs CLI via terminal)
-  └─ interagent task update <id> --status in_progress
-  └─ [does the work]
-  └─ interagent task update <id> --status completed
-  └─ interagent msg send --to claude --subject "Done" --message "..."
-
-You
-  └─ "Claude, Kimi is done"
-
-Claude (runs CLI via Bash automatically)
-  └─ interagent inbox --agent claude
-  └─ interagent summary
-  └─ [reviews Kimi's work and continues]
+Claude sends message via send_message tool
+  → watchdog detects it
+  → fires: kimi --print -p "check your inbox"
+  → Kimi calls get_inbox, reads it, replies via send_message
+  → watchdog detects it
+  → fires: claude -p "check your inbox"
+  → Claude reads and continues
 ```
 
-**The only manual step is pasting the relay prompt into Kimi.** Both agents handle all CLI commands themselves — you just have a conversation.
+**You only interact with Claude** — the human never relays anything.
 
 ---
 
@@ -53,80 +39,86 @@ Claude (runs CLI via Bash automatically)
 ### 1. Install
 
 ```bash
+# Base package (manual relay mode)
 pip install interagent-framework
+
+# With MCP server (zero-relay mode)
+pip install "interagent-framework[mcp]"
 ```
 
 ### 2. Initialize (once per project)
 
 ```bash
 cd your-project/
-# N-agent support: initialize with any combination of agents
-interagent init --project "My App" --agents claude,kimi,gemini,codex
+interagent init --project "My App" --agents claude,kimi
 ```
 
-This creates:
-- `.interagent/AGENTS.md` — full collaboration guide that all agents read on startup
-- `.interagent/ROLES.md` — auto-generated role assignments (tech_lead, backend_dev, etc.)
+Creates:
+- `.interagent/AGENTS.md` — collaboration guide all agents read on startup
+- `.interagent/ROLES.md` — role assignments (tech_lead, backend_dev, etc.)
 - `.interagent/shared/context.md` — fill this with your project description
-- `.interagent/session.json` — session state
 
-**Supported agents:** claude, kimi, gemini, codex, aider, cline, cursor, windsurf, copilot, opendevin, gpt, qwen (or any name matching `^[a-zA-Z0-9_-]{1,32}$`)
+**Supported agents:** claude, kimi, gemini, codex, aider, cline, cursor, windsurf, copilot, and any name matching `^[a-zA-Z0-9_-]{1,32}$`
 
 ### 3. Fill in project context
 
-Edit `.interagent/shared/context.md` and paste in your project description, current state, and any constraints. Both agents read this at the start of every task.
+```bash
+# Edit this file — agents read it at the start of every task
+.interagent/shared/context.md
+```
 
-### 4. Start working — just prompt the principal
+### 4a. Start working — manual relay mode
 
-From this point, use natural language. The principal agent handles the CLI:
+Just prompt Claude. It runs all `interagent` CLI commands via Bash automatically:
 
-> "Claude, read `.interagent/AGENTS.md` to understand how we're collaborating,
-> then delegate the database schema design to Kimi."
+> "Claude, delegate the database schema design to Kimi."
 
-Claude will run `interagent quick` and `interagent relay` via Bash, then show you a prompt to paste into Kimi Code.
+Claude runs `interagent quick` and `interagent relay`, then shows you a prompt to paste into Kimi Code. When Kimi is done, tell Claude and it reads the reply.
 
-With N-agent support, you can have multiple delegates working in parallel — e.g., Kimi on backend, Gemini on frontend, Codex on tests.
+### 4b. Start working — zero-relay MCP mode
+
+**One-time MCP setup:**
+
+```bash
+# Configure the MCP server in both agents (auto-detects claude and kimi CLI)
+interagent mcp setup
+```
+
+Or manually:
+
+```bash
+claude mcp add interagent -- interagent-mcp
+kimi mcp add --transport stdio interagent -- interagent-mcp
+```
+
+**Start the watchers** (two terminals, keep them running):
+
+```bash
+# Terminal 1 — notifies Claude when Kimi sends a message
+interagent-watch --auto-ping --agent claude
+
+# Terminal 2 — notifies Kimi when Claude sends a message
+interagent-watch --auto-ping --agent kimi
+```
+
+**Now just prompt Claude.** It uses `send_message` and `get_task` as native MCP tools. When it sends a message to Kimi, the watchdog fires `kimi --print -p "check inbox"` automatically, and the loop continues without you.
 
 ---
 
-## Cross-Machine Collaboration (v0.2.0+)
+## MCP Tools Reference
 
-By default, InterAgent works on a single machine via the local `.interagent/` directory. If your collaborator is on a different machine, enable **Git transport** with one command:
+Once configured, both agents have these tools available natively:
 
-```bash
-# Cross-machine with cluster naming (v0.3.0+)
-interagent transport setup --type git --cluster alice
-```
-
-This creates an orphan branch (`interagent/collab`) on your git remote. Messages and tasks are synced through it using git plumbing — your working tree and current branch are never touched.
-
-Cluster naming stamps messages as `alice.claude → bob.gemini` for multi-person git transport.
-
-### How to set up cross-machine
-
-```bash
-# Both developers run this (same git remote required):
-interagent transport setup --type git --remote origin
-
-# Check status
-interagent transport status
-
-# Force-fetch latest messages
-interagent transport pull
-
-# Revert to local-only
-interagent transport disable
-```
-
-All existing commands (`quick`, `inbox`, `relay`, `task`, etc.) work identically — transport is transparent.
-
-### Start watching for incoming messages
-
-```bash
-interagent-watch
-```
-
-Automatically adapts to the active transport. For git transport, polls every 10 seconds instead of 5.
+| Tool | What it does |
+|---|---|
+| `send_message(from_agent, to_agent, subject, content)` | Send a message to another agent |
+| `get_inbox(agent)` | Read unread messages |
+| `mark_read(message_id)` | Archive a message after processing |
+| `list_tasks(agent?)` | List active tasks, optionally filtered |
+| `get_task(task_id)` | Get full task details |
+| `update_task(task_id, status)` | Update task status |
+| `create_task(title, description, assignee, ...)` | Create and assign a new task |
+| `get_status()` | Session summary + task counts |
 
 ---
 
@@ -140,12 +132,11 @@ interagent status                                      # Full status
 interagent summary                                     # Quick overview
 ```
 
-### Delegation
+### Delegation (manual relay mode)
 
 ```bash
 interagent quick --to kimi "Task description"         # Create + assign task
 interagent relay --agent kimi                         # Generate relay prompt
-interagent relay --agent claude                       # Generate relay for Claude
 ```
 
 ### Tasks
@@ -163,8 +154,23 @@ interagent task update <task_id> --status revision_needed --note "Fix X"
 
 ```bash
 interagent inbox --agent claude                       # Check Claude's inbox
-interagent inbox --agent kimi                         # Check Kimi's inbox
 interagent msg send --to claude --subject "Done" --message "Implemented X"
+```
+
+### MCP server
+
+```bash
+interagent mcp setup                                  # Configure in Claude + Kimi (once)
+interagent-mcp                                        # Run the MCP server (stdio)
+```
+
+### Watchdog
+
+```bash
+interagent-watch                                      # Monitor + print notifications
+interagent-watch --auto-ping --agent claude           # Auto-notify Claude on new messages
+interagent-watch --auto-ping --agent kimi             # Auto-notify Kimi on new messages
+interagent-watch --interval 3                         # Custom poll interval (seconds)
 ```
 
 ### Transport (cross-machine)
@@ -185,6 +191,33 @@ interagent update-template --agent claude --focus "sub-agents"
 
 ---
 
+## Cross-Machine Collaboration
+
+By default, InterAgent works on a single machine. For cross-machine sync, enable **git transport**:
+
+```bash
+# Both developers run this (same git remote required)
+interagent transport setup --type git --cluster alice   # your workspace name
+```
+
+This creates an orphan branch (`interagent/collab`) on your git remote. Messages and tasks sync through it using git plumbing — your working tree and current branch are never touched.
+
+Messages are stamped `alice.claude → bob.kimi` so multiple workspaces can share the same remote.
+
+The MCP server works transparently with all transports — it calls `get_transport()` internally.
+
+---
+
+## Task Status Lifecycle
+
+```
+pending → assigned → in_progress → completed → under_review → approved
+                                             ↘ revision_needed (loops back)
+                                             ↘ rejected
+```
+
+---
+
 ## What Gets Created on Init
 
 ```
@@ -192,85 +225,28 @@ interagent update-template --agent claude --focus "sub-agents"
 ├── AGENTS.md             # Collaboration guide — all agents read this
 ├── ROLES.md              # Auto-generated role assignments (editable)
 ├── README.md             # Quick command reference
-├── session.json          # Session config (id, mode, principal)
+├── session.json          # Session config (gitignored)
 ├── shared/
 │   └── context.md        # Project state — fill this with your project description
 ├── tasks/
-│   ├── active/           # JSON files for each active task
-│   └── completed/        # Archived completed tasks
-├── messages/
-│   ├── pending/          # Unread messages
-│   └── archive/          # Message history
-└── agents/               # Agent status files
-```
-
-`.interagent/AGENTS.md` is the key file. All agents read it on every session start to understand their roles, available commands, and the collaboration protocol.
-
----
-
-## Prompt-First Workflow
-
-### Delegating to Kimi
-
-Just tell Claude what to assign. No CLI needed.
-
-**You → Claude:**
-> "Delegate the user authentication module to Kimi. It should include login, logout,
-> JWT tokens, and password reset. See PLAN.md for the API design."
-
-**Claude does automatically:**
-```bash
-interagent quick --to kimi "Implement user authentication: login, logout, JWT tokens, password reset. See PLAN.md §3 for API design."
-interagent relay --agent kimi
-```
-
-**Claude shows you:**
-```
-====================================================================
-RELAY PROMPT FOR KIMI
-====================================================================
-Copy and paste this to the agent:
-
-@kimi - You have work in the InterAgent collaboration system.
-
-Your role: delegate
-Collaboration guide: read .interagent/AGENTS.md for commands, workflow, and protocol.
-Project context: read .interagent/shared/context.md before starting.
-
-[TASK] You have 1 new task(s):
-   - Implement user authentication (task-a3f2c1)
-...
-====================================================================
-```
-
-**You:** paste that into Kimi Code.
-
----
-
-### Getting Kimi's Work Back to Claude
-
-When Kimi is done:
-
-**You → Claude:**
-> "Kimi is done."
-
-**Claude does automatically:**
-```bash
-interagent inbox --agent claude
-interagent summary
+│   ├── active/           # JSON files for each active task (gitignored)
+│   └── completed/        # Archived completed tasks (gitignored)
+└── messages/
+    ├── pending/          # Unread messages (gitignored)
+    └── archive/          # Message history (gitignored)
 ```
 
 ---
 
 ## Safety Features
 
-**File locking** — prevents race conditions when both agents work simultaneously. Tasks and messages use file-based mutexes with a 5-minute automatic timeout.
+**File locking** — prevents race conditions when both agents write simultaneously. Tasks and messages use file-based mutexes with a 5-minute automatic timeout.
 
 **Schema validation** — all JSON state files are validated before saving. Agent names, task statuses, and required fields are enforced.
 
 **Input sanitization** — string length limits and type coercion before any write.
 
-**Conflict-free git sync** — GitTransport appends files with UUID-suffixed names; two machines can never produce the same filename. Push conflicts are retried automatically.
+**Conflict-free git sync** — GitTransport appends files with UUID-suffixed names; two machines can never produce the same filename.
 
 ---
 
@@ -283,10 +259,9 @@ interagent summary
 | Delegate 2 | gemini | Frontend development |
 | Delegate 3 | codex | Testing, DevOps |
 
-In hierarchical mode (default), the principal assigns work and reviews results.
-In peer mode, agents can assign tasks to each other.
+In hierarchical mode (default), the principal assigns work and reviews results. In peer mode, agents can assign tasks to each other.
 
-Roles are defined in `.interagent/ROLES.md` — edit this file to customize agent responsibilities.
+Roles are defined in `.interagent/ROLES.md` — edit this file to customize responsibilities.
 
 ---
 
@@ -297,22 +272,26 @@ Roles are defined in `.interagent/ROLES.md` — edit this file to customize agen
 | Local transport | Done | Single-machine via `.interagent/` filesystem |
 | Git transport | Done (v0.2.0) | Cross-machine via orphan branch, zero infra |
 | N-agent support | Done (v0.3.0) | Multi-agent teams with ROLES.md and cluster naming |
-| InterAgent Hub | Planned | MCP server for multi-team collaboration, web dashboard |
+| Local MCP server | Done (v0.4.0) | Native tool integration, zero-relay with watchdog pinger |
+| InterAgent Hub | Planned | Hosted MCP server, multi-team, web dashboard |
 
-The Hub (Phase 3) will be an **MCP server** — Claude Code and Kimi Code connect to it as a native MCP tool provider, enabling real-time delivery without polling and a web dashboard for project oversight. See [ROADMAP.md](ROADMAP.md) for the full plan.
+The Hub (next phase) will be a **hosted MCP server** — any agent connects via HTTP, enabling real-time delivery without polling and a web dashboard for oversight. See [ROADMAP.md](ROADMAP.md) for the full plan.
 
 ---
 
 ## Installation Options
 
 ```bash
-# From PyPI
+# From PyPI — base (manual relay mode)
 pip install interagent-framework
+
+# From PyPI — with MCP server (zero-relay mode)
+pip install "interagent-framework[mcp]"
 
 # From source
 git clone https://github.com/gutohuida/InterAgentFramework.git
 cd InterAgentFramework
-pip install -e .
+pip install -e ".[mcp]"
 ```
 
 ---
@@ -320,24 +299,25 @@ pip install -e .
 ## FAQ
 
 **Q: Do I need to run CLI commands during my session?**
-No. After `interagent init`, just talk to your principal agent. It runs all `interagent` commands via Bash automatically. The only manual step is pasting relay prompts to delegate agents.
+No. After `interagent init`, just talk to Claude. It runs all `interagent` commands via Bash automatically. In MCP mode, even the relay step is automated.
+
+**Q: What's the difference between manual relay and MCP mode?**
+In manual mode, you copy-paste a relay prompt from Claude to Kimi. In MCP mode, the watchdog fires a one-liner at the agent's CLI when a message arrives — no human involvement after the watchers are started.
+
+**Q: Do the watchdog processes need to stay running?**
+Yes. Run `interagent-watch --auto-ping --agent <name>` in a terminal (or as a background process / system service) for each agent you want auto-notified. If they're not running, messages still queue up — agents just won't be auto-triggered.
 
 **Q: How do delegate agents know how to use the system?**
-`interagent init` writes `.interagent/AGENTS.md` — a complete guide covering commands, workflow, and protocol. The relay prompt tells each agent to read it before starting work.
+`interagent init` writes `.interagent/AGENTS.md` — a complete guide covering commands, workflow, and protocol. In MCP mode, agents use the registered tools directly instead of CLI commands.
 
 **Q: Should I commit `.interagent/` to Git?**
-Partially. The `.gitignore` excludes runtime state (tasks, messages, session.json, transport.json) but keeps AGENTS.md and README.md. This gives you documentation without committing transient data.
+Partially. The `.gitignore` excludes runtime state (tasks, messages, session.json, transport.json) but keeps AGENTS.md and README.md.
 
 **Q: Can I use this with a single agent?**
-Yes — just skip the relay step. The session, task, and summary commands are useful even for single-agent projects to track progress.
+Yes — skip the relay step. Session, task, and summary commands are useful even for single-agent projects.
 
 **Q: Do both developers need the same git remote for cross-machine sync?**
-Yes. Git transport requires a shared remote (e.g. `origin`). One developer runs `interagent transport setup --type git` to create the orphan branch, then the other runs the same command to connect to it.
-
-Use `--cluster` to identify different teams: `alice` and `bob` can both collaborate on the same project with messages stamped as `alice.claude → bob.gemini`.
-
-**Q: What if a delegate agent doesn't have terminal access?**
-The relay prompt includes the task details inline, so agents can read and respond without running any commands. The collaboration is less structured but still works.
+Yes. Git transport requires a shared remote (e.g. `origin`). One developer creates the orphan branch with `interagent transport setup --type git`, the other connects with the same command.
 
 ---
 
