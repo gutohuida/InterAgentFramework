@@ -1,0 +1,34 @@
+# AgentWeave Hub — for end users
+# No source code needed. Just this file + a .env file.
+#
+# Quick start:
+#   curl -O https://raw.githubusercontent.com/gutohuida/AgentWeave/master/hub/docker-compose.yml
+#   curl -O https://raw.githubusercontent.com/gutohuida/AgentWeave/master/hub/.env.example
+#   cp .env.example .env   # then edit AW_BOOTSTRAP_API_KEY
+#   docker compose up -d
+
+services:
+  hub:
+    image: ghcr.io/gutohuida/agentweave-hub:latest
+    ports:
+      - "${AW_PORT:-8000}:8000"
+    volumes:
+      - hub-data:/app/data
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///data/agentweave.db
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/status')"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  hub-data:

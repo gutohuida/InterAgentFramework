@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-File-based collaboration protocol enabling Claude Code and Kimi Code to work together through a shared `.agentweave/` directory. Zero external dependencies — pure Python stdlib. Supports single-machine (local) and cross-machine (git orphan branch) collaboration. An MCP-based Hub for multi-team use is planned — see ROADMAP.md.
+File-based collaboration protocol enabling Claude Code and Kimi Code to work together through a shared `.agentweave/` directory. Zero external dependencies — pure Python stdlib. Supports single-machine (local) and cross-machine (git orphan branch) collaboration. The AgentWeave Hub (self-hosted FastAPI server) is now available in `hub/` — see ROADMAP.md.
 
 ## Tech Stack
 - Python 3.8+, no external runtime dependencies
@@ -43,6 +43,22 @@ agentweave transport status                   # show active transport
 agentweave transport pull                     # force immediate fetch
 agentweave transport disable                  # revert to local filesystem
 
+# Hub — end-user install (no source code needed, pulls pre-built image)
+curl -O https://raw.githubusercontent.com/gutohuida/AgentWeave/master/hub/docker-compose.yml
+curl -O https://raw.githubusercontent.com/gutohuida/AgentWeave/master/hub/.env.example
+cp .env.example .env   # edit AW_BOOTSTRAP_API_KEY
+docker compose up -d
+
+# Hub — contributor build from source (inside hub/ directory)
+docker compose -f docker-compose.yml -f docker-compose.build.yml up --build
+
+# Connect CLI to Hub
+agentweave transport setup --type http --url http://localhost:8000 \
+  --api-key aw_live_... --project-id proj-default
+
+# Human interaction
+agentweave reply --id <question_id> "Your answer"
+
 # Template maintenance
 agentweave update-template --agent claude --template-path ~/Documents/projects/template.txt
 ```
@@ -64,6 +80,14 @@ pytest
 ## Architecture
 
 ```
+hub/                  AgentWeave Hub server (FastAPI + SQLite + MCP)
+  hub/main.py         FastAPI app factory + lifespan
+  hub/db/             SQLAlchemy async models + engine (5 tables)
+  hub/api/v1/         REST endpoints (messages, tasks, questions, status, events SSE)
+  hub/mcp_server.py   FastMCP server (10 tools: 8 existing + ask_user + get_answer)
+  docker-compose.yml  Self-hosted deployment
+  pyproject.toml      Hub dependencies (FastAPI, SQLAlchemy, fastmcp, etc.)
+
 src/agentweave/
   cli.py          All CLI commands (argparse). To add a command: add cmd_*, add subparser in
                   create_parser(), add routing branch in main()
@@ -138,6 +162,9 @@ Valid statuses (from `constants.py`): `pending`, `assigned`, `in_progress`, `com
 - NEVER commit `.agentweave/transport.json` or `.agentweave/.git_seen/` (gitignored, machine-local)
 - `kimichanges.md` and `kimiwork.md` are gitignored working files — never commit them
 - The `relay` subcommand flag is `--agent`, not `--to` — never write `relay --to`
+- Hub API key format is `aw_live_{random32}` — never commit keys
+- Hub is in `hub/` subdirectory; CLI is in `src/agentweave/` — two separate packages
+- HttpTransport uses stdlib `urllib.request` only — no new CLI dependencies
 
 ## When Compacting
 

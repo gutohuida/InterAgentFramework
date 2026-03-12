@@ -1125,9 +1125,63 @@ def cmd_transport_setup(args: argparse.Namespace) -> int:
         return 0
 
     elif transport_type == "http":
-        print_error("HTTP/MCP transport (AgentWeave Hub) is not yet implemented.")
-        print_info("See ROADMAP.md for the planned MCP-based Hub architecture.")
-        return 1
+        url = getattr(args, "url", None)
+        api_key = getattr(args, "api_key", None)
+        project_id = getattr(args, "project_id", None)
+
+        if not url or not api_key or not project_id:
+            print_error(
+                "HTTP transport requires --url, --api-key, and --project-id.\n"
+                "Example:\n"
+                "  agentweave transport setup --type http \\\n"
+                "    --url http://localhost:8000 \\\n"
+                "    --api-key aw_live_... \\\n"
+                "    --project-id proj-default"
+            )
+            return 1
+
+        # Connectivity check
+        import urllib.request as _urllib_req
+        import urllib.error as _urllib_err
+
+        status_url = f"{url.rstrip('/')}/api/v1/status"
+        req = _urllib_req.Request(status_url)
+        req.add_header("Authorization", f"Bearer {api_key}")
+        req.add_header("Accept", "application/json")
+        try:
+            with _urllib_req.urlopen(req, timeout=10) as resp:
+                resp.read()
+        except _urllib_err.HTTPError as exc:
+            if exc.code == 401:
+                print_error(f"Hub rejected the API key (401 Unauthorized). Check --api-key.")
+            else:
+                print_error(f"Hub returned HTTP {exc.code}. Check --url.")
+            return 1
+        except _urllib_err.URLError as exc:
+            print_error(f"Cannot reach Hub at {url}: {exc.reason}")
+            return 1
+
+        # Write transport.json
+        AGENTWEAVE_DIR.mkdir(parents=True, exist_ok=True)
+        save_json(TRANSPORT_CONFIG_FILE, {
+            "type": "http",
+            "url": url,
+            "api_key": api_key,
+            "project_id": project_id,
+        })
+
+        print_success("HTTP transport configured!")
+        print(f"   URL:        {url}")
+        print(f"   Project ID: {project_id}")
+        print(f"   Config:     {TRANSPORT_CONFIG_FILE}")
+        print()
+        print("Next steps:")
+        print("  agentweave quick --to kimi 'Test task'")
+        print("  agentweave inbox --agent kimi")
+        print()
+        print("Human interaction:")
+        print("  agentweave reply --id <question_id> 'Your answer'")
+        return 0
 
     print_error(f"Unknown transport type: {transport_type}")
     return 1
@@ -1218,6 +1272,51 @@ def cmd_transport_disable(_args: argparse.Namespace) -> int:
     TRANSPORT_CONFIG_FILE.unlink()
     print_success("Transport disabled — reverted to local filesystem")
     return 0
+
+
+def cmd_reply(args: argparse.Namespace) -> int:
+    """Reply to a question asked by an agent (HTTP transport only)."""
+    from .utils import load_json as _load_json
+
+    config = _load_json(TRANSPORT_CONFIG_FILE)
+    if not config or config.get("type") != "http":
+        print_error("The 'reply' command requires HTTP transport to be configured.")
+        print_info("Run: agentweave transport setup --type http ...")
+        return 1
+
+    url = config["url"].rstrip("/")
+    api_key = config["api_key"]
+    question_id = args.id
+    answer = args.answer
+
+    import json as _json
+    import urllib.request as _req
+    import urllib.error as _uerr
+
+    body = _json.dumps({"answer": answer}).encode()
+    request = _req.Request(
+        f"{url}/api/v1/questions/{question_id}",
+        data=body,
+        method="PATCH",
+    )
+    request.add_header("Authorization", f"Bearer {api_key}")
+    request.add_header("Content-Type", "application/json")
+    request.add_header("Accept", "application/json")
+
+    try:
+        with _req.urlopen(request, timeout=10) as resp:
+            resp.read()
+        print_success(f"Answer submitted for question {question_id}")
+        return 0
+    except _uerr.HTTPError as exc:
+        if exc.code == 404:
+            print_error(f"Question '{question_id}' not found.")
+        else:
+            print_error(f"Hub returned HTTP {exc.code}: {exc.read().decode(errors='replace')}")
+        return 1
+    except _uerr.URLError as exc:
+        print_error(f"Cannot reach Hub: {exc.reason}")
+        return 1
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -1539,6 +1638,24 @@ For more help: https://github.com/gutohuida/AgentWeave
             "can be addressed individually."
         ),
     )
+    # HTTP transport args
+    transport_setup.add_argument(
+        "--url",
+        default=None,
+        help="Hub URL (http transport only), e.g. http://localhost:8000",
+    )
+    transport_setup.add_argument(
+        "--api-key",
+        dest="api_key",
+        default=None,
+        help="Hub API key (http transport only), e.g. aw_live_...",
+    )
+    transport_setup.add_argument(
+        "--project-id",
+        dest="project_id",
+        default=None,
+        help="Hub project ID (http transport only), e.g. proj-default",
+    )
 
     # transport status
     transport_subparsers.add_parser("status", help="Show transport status")
@@ -1548,6 +1665,22 @@ For more help: https://github.com/gutohuida/AgentWeave
 
     # transport disable
     transport_subparsers.add_parser("disable", help="Disable transport, revert to local")
+
+    # Reply to agent questions (Hub / http transport only)
+    reply_parser = subparsers.add_parser(
+        "reply",
+        help="Reply to a question asked by an agent (requires HTTP transport)",
+    )
+    reply_parser.add_argument(
+        "--id",
+        required=True,
+        dest="id",
+        help="Question ID (e.g. q-abc123)",
+    )
+    reply_parser.add_argument(
+        "answer",
+        help="Your answer text",
+    )
 
     return parser
 
@@ -1630,6 +1763,8 @@ def main(args: Optional[List[str]] = None) -> int:
             else:
                 parser.parse_args(["transport", "--help"])
                 return 0
+        elif parsed_args.command == "reply":
+            return cmd_reply(parsed_args)
         else:
             parser.print_help()
             return 0

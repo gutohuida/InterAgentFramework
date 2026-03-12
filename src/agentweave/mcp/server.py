@@ -265,6 +265,138 @@ def get_status() -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Human interaction tools
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def ask_user(
+    from_agent: str,
+    question: str,
+    blocking: bool = False,
+) -> Dict[str, Any]:
+    """Ask the human user a question.
+
+    If HTTP transport is active, the question is posted to the Hub and the user
+    can answer via `agentweave reply --id <question_id> "..."`.
+    If local/git transport is active, a message is sent to the 'user' agent as
+    a fallback (the human must check their inbox manually).
+
+    Args:
+        from_agent: Name of the agent asking the question
+        question: The question text
+        blocking: If True, signals that the agent cannot continue until answered
+
+    Returns:
+        Dict with 'question_id' on success (http), or 'message_id' (local fallback).
+    """
+    transport = get_transport()
+    if transport.get_transport_type() == "http":
+        import json as _json
+        import urllib.request as _req
+        import urllib.error as _uerr
+        from ..constants import TRANSPORT_CONFIG_FILE
+        from ..utils import load_json as _load_json
+
+        config = _load_json(TRANSPORT_CONFIG_FILE)
+        if not config:
+            return {"success": False, "error": "No transport config found"}
+
+        url = config["url"].rstrip("/")
+        api_key = config["api_key"]
+        project_id = config.get("project_id", "")
+
+        body = _json.dumps({
+            "from_agent": from_agent,
+            "question": question,
+            "blocking": blocking,
+            "project_id": project_id,
+        }).encode()
+        request = _req.Request(f"{url}/api/v1/questions", data=body, method="POST")
+        request.add_header("Authorization", f"Bearer {api_key}")
+        request.add_header("Content-Type", "application/json")
+        request.add_header("Accept", "application/json")
+        try:
+            with _req.urlopen(request, timeout=10) as resp:
+                result = _json.loads(resp.read())
+            return {"success": True, "question_id": result.get("id")}
+        except (_uerr.HTTPError, _uerr.URLError) as exc:
+            return {"success": False, "error": str(exc)}
+    else:
+        # Local/git fallback: send a message to the 'user' agent
+        msg = Message.create(
+            sender=from_agent,
+            recipient="user",
+            subject="Question from agent",
+            content=f"**Question** (blocking={blocking}):\n\n{question}\n\n"
+                    "Reply by sending a message back to this agent.",
+            message_type="message",
+        )
+        ok = MessageBus.send(msg)
+        if ok:
+            return {
+                "success": True,
+                "message_id": msg.id,
+                "note": (
+                    "Local transport: question sent as message to 'user' agent. "
+                    "Check inbox with: agentweave inbox --agent user"
+                ),
+            }
+        return {"success": False, "error": "Failed to send question via local transport"}
+
+
+@mcp.tool()
+def get_answer(question_id: str) -> Dict[str, Any]:
+    """Check if the human has answered a question posted via ask_user().
+
+    Requires HTTP transport. Returns pending=True if not yet answered.
+
+    Args:
+        question_id: ID returned by ask_user() (e.g. "q-abc123")
+
+    Returns:
+        Dict with 'answered' bool, 'answer' string (if answered), 'pending' bool.
+    """
+    transport = get_transport()
+    if transport.get_transport_type() != "http":
+        return {
+            "answered": False,
+            "answer": None,
+            "pending": True,
+            "note": (
+                "get_answer requires HTTP transport (AgentWeave Hub). "
+                "Current transport: " + transport.get_transport_type()
+            ),
+        }
+
+    import json as _json
+    import urllib.request as _req
+    import urllib.error as _uerr
+    from ..constants import TRANSPORT_CONFIG_FILE
+    from ..utils import load_json as _load_json
+
+    config = _load_json(TRANSPORT_CONFIG_FILE)
+    if not config:
+        return {"answered": False, "answer": None, "pending": True, "error": "No transport config"}
+
+    url = config["url"].rstrip("/")
+    api_key = config["api_key"]
+    request = _req.Request(f"{url}/api/v1/questions/{question_id}")
+    request.add_header("Authorization", f"Bearer {api_key}")
+    request.add_header("Accept", "application/json")
+    try:
+        with _req.urlopen(request, timeout=10) as resp:
+            result = _json.loads(resp.read())
+        return {
+            "answered": result.get("answered", False),
+            "answer": result.get("answer"),
+            "pending": not result.get("answered", False),
+        }
+    except (_uerr.HTTPError, _uerr.URLError) as exc:
+        return {"answered": False, "answer": None, "pending": True, "error": str(exc)}
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
