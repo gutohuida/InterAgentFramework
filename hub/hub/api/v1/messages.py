@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
-import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -14,12 +13,9 @@ from ...db.models import Message
 from ...schemas.common import SuccessResponse
 from ...schemas.messages import MessageCreate, MessageResponse
 from ...sse import sse_manager
+from ...utils import short_id
 
 router = APIRouter(prefix="/messages", tags=["messages"])
-
-
-def _uuid6() -> str:
-    return str(uuid.uuid4())[:8]
 
 
 @router.post("", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
@@ -29,7 +25,7 @@ async def create_message(
     session: AsyncSession = Depends(get_session),
 ):
     project_id, _ = project
-    msg_id = body.id or f"msg-{_uuid6()}"
+    msg_id = body.id or f"msg-{short_id()}"
     msg = Message(
         id=msg_id,
         project_id=project_id,

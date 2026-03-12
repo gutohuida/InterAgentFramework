@@ -10,11 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from ..config import settings
 from .models import Base, ApiKey, Project
 
-# Ensure data directory exists for SQLite
-if settings.database_url.startswith("sqlite"):
-    db_path = settings.database_url.replace("sqlite+aiosqlite:///", "")
-    os.makedirs(os.path.dirname(db_path) if os.path.dirname(db_path) else ".", exist_ok=True)
-
 engine = create_async_engine(
     settings.database_url,
     echo=False,
@@ -32,6 +27,12 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db() -> None:
     """Create tables and bootstrap API key if none exist."""
+    if settings.database_url.startswith("sqlite"):
+        db_path = settings.database_url.replace("sqlite+aiosqlite:///", "")
+        dir_part = os.path.dirname(db_path)
+        if dir_part:
+            os.makedirs(dir_part, exist_ok=True)
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

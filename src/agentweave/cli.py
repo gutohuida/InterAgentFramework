@@ -1234,9 +1234,31 @@ def cmd_transport_status(_args: argparse.Namespace) -> int:
             print(f"   Status:        cannot reach {remote}/{branch}")
 
     elif transport_type == "http":
-        print(f"   URL:     {config.get('url', '(not set)')}")
-        print(f"   Project: {config.get('project_id', '(not set)')}")
-        print(f"   Status:  not yet implemented — see ROADMAP.md")
+        import urllib.request as _ureq
+        import urllib.error as _uerr
+        url = config.get("url", "")
+        api_key = config.get("api_key", "")
+        project_id = config.get("project_id", "")
+        print(f"   URL:     {url or '(not set)'}")
+        print(f"   Project: {project_id or '(not set)'}")
+        if url and api_key:
+            try:
+                req = _ureq.Request(
+                    f"{url.rstrip('/')}/api/v1/status",
+                    headers={"Authorization": f"Bearer {api_key}", "Accept": "application/json"},
+                )
+                with _ureq.urlopen(req, timeout=5) as resp:
+                    import json as _json
+                    data = _json.loads(resp.read())
+                tasks_active = sum(data.get("task_counts", {}).values())
+                msgs_pending = data.get("message_counts", {}).get("pending", 0)
+                print(f"   Status:  connected")
+                print(f"   Tasks:   {tasks_active} active")
+                print(f"   Messages: {msgs_pending} pending")
+            except (_uerr.URLError, _uerr.HTTPError, Exception) as exc:
+                print(f"   Status:  unreachable ({exc})")
+        else:
+            print(f"   Status:  not configured")
 
     return 0
 

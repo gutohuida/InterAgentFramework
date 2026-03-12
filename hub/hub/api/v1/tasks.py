@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
-import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -13,12 +12,9 @@ from ...db.engine import get_session
 from ...db.models import Task
 from ...schemas.tasks import TaskCreate, TaskResponse, TaskUpdate
 from ...sse import sse_manager
+from ...utils import short_id
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
-
-
-def _uuid6() -> str:
-    return str(uuid.uuid4())[:8]
 
 
 @router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
@@ -28,7 +24,7 @@ async def create_task(
     session: AsyncSession = Depends(get_session),
 ):
     project_id, _ = project
-    task_id = body.id or f"task-{_uuid6()}"
+    task_id = body.id or f"task-{short_id()}"
     created_at = None
     if body.created_at:
         try:

@@ -1,5 +1,6 @@
 """GET /api/v1/status — project health snapshot."""
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Tuple
 
@@ -14,6 +15,8 @@ from ...schemas.common import StatusResponse
 
 router = APIRouter(prefix="/status", tags=["status"])
 
+_ACTIVE_TASK_STATUSES = ["in_progress", "assigned", "pending"]
+
 
 @router.get("", response_model=StatusResponse)
 async def get_status(
@@ -21,48 +24,52 @@ async def get_status(
     session: AsyncSession = Depends(get_session),
 ):
     project_id, project_name = project
-
-    # Message counts
-    total_msgs = await session.scalar(
-        select(func.count()).select_from(Message).where(Message.project_id == project_id)
-    )
-    pending_msgs = await session.scalar(
-        select(func.count()).select_from(Message).where(
-            Message.project_id == project_id, Message.read == False  # noqa: E712
-        )
-    )
-
-    # Task counts by status
-    task_rows = await session.execute(
-        select(Task.status, func.count()).where(Task.project_id == project_id).group_by(Task.status)
-    )
-    task_counts = {row[0]: row[1] for row in task_rows}
-
-    # Question counts
-    total_qs = await session.scalar(
-        select(func.count()).select_from(Question).where(Question.project_id == project_id)
-    )
-    unanswered_qs = await session.scalar(
-        select(func.count()).select_from(Question).where(
-            Question.project_id == project_id, Question.answered == False  # noqa: E712
-        )
-    )
-
-    # Active agents: senders of messages or assignees of active tasks in last 24 h
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
-    sender_rows = await session.execute(
-        select(Message.sender).distinct().where(
-            Message.project_id == project_id, Message.timestamp >= cutoff
-        )
+
+    (
+        total_msgs,
+        pending_msgs,
+        task_rows,
+        total_qs,
+        unanswered_qs,
+        sender_rows,
+        assignee_rows,
+    ) = await asyncio.gather(
+        session.scalar(
+            select(func.count()).select_from(Message).where(Message.project_id == project_id)
+        ),
+        session.scalar(
+            select(func.count()).select_from(Message).where(
+                Message.project_id == project_id, Message.read == False  # noqa: E712
+            )
+        ),
+        session.execute(
+            select(Task.status, func.count()).where(Task.project_id == project_id).group_by(Task.status)
+        ),
+        session.scalar(
+            select(func.count()).select_from(Question).where(Question.project_id == project_id)
+        ),
+        session.scalar(
+            select(func.count()).select_from(Question).where(
+                Question.project_id == project_id, Question.answered == False  # noqa: E712
+            )
+        ),
+        session.execute(
+            select(Message.sender).distinct().where(
+                Message.project_id == project_id, Message.timestamp >= cutoff
+            )
+        ),
+        session.execute(
+            select(Task.assignee).distinct().where(
+                Task.project_id == project_id,
+                Task.assignee.isnot(None),
+                Task.status.in_(_ACTIVE_TASK_STATUSES),
+            )
+        ),
     )
+
+    task_counts = {row[0]: row[1] for row in task_rows}
     senders = {r[0] for r in sender_rows}
-    assignee_rows = await session.execute(
-        select(Task.assignee).distinct().where(
-            Task.project_id == project_id,
-            Task.assignee.isnot(None),
-            Task.status.in_(["in_progress", "assigned", "pending"]),
-        )
-    )
     assignees = {r[0] for r in assignee_rows if r[0]}
     agents_active = sorted(senders | assignees)
 

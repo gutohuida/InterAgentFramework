@@ -3,6 +3,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
 from .api.v1 import v1_router
 from .db.engine import init_db
@@ -24,6 +25,11 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
+
+    @app.get("/health", include_in_schema=False)
+    async def health():
+        return JSONResponse({"status": "ok"})
+
     app.include_router(v1_router)
     return app
 

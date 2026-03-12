@@ -33,6 +33,12 @@ mcp = FastMCP(
     ),
 )
 
+# Cached at module load — avoids os.environ lookup on every tool call
+_BASE_URL: str = os.environ.get("HUB_URL", "http://localhost:8000")
+_API_KEY: str = os.environ.get("HUB_API_KEY", "")
+_PROJECT_ID: str = os.environ.get("HUB_PROJECT_ID", "proj-default")
+
+
 # ---------------------------------------------------------------------------
 # Internal helper — makes authenticated requests to the Hub REST API
 # ---------------------------------------------------------------------------
@@ -45,12 +51,12 @@ def _hub_request(
 ) -> Any:
     """Make an authenticated request to the Hub REST API.
 
-    Reads HUB_URL, HUB_API_KEY, and HUB_PROJECT_ID from environment.
+    Uses HUB_URL, HUB_API_KEY, and HUB_PROJECT_ID (read once at startup).
     Raises RuntimeError on non-2xx responses.
     """
-    base_url = os.environ.get("HUB_URL", "http://localhost:8000")
-    api_key = os.environ.get("HUB_API_KEY", "")
-    project_id = os.environ.get("HUB_PROJECT_ID", "proj-default")
+    base_url = _BASE_URL
+    api_key = _API_KEY
+    project_id = _PROJECT_ID
 
     url = f"{base_url}/api/v1{path}"
     if params:

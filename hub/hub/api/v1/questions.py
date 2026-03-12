@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
-import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -13,12 +12,9 @@ from ...db.engine import get_session
 from ...db.models import Question
 from ...schemas.questions import QuestionAnswer, QuestionCreate, QuestionResponse
 from ...sse import sse_manager
+from ...utils import short_id
 
 router = APIRouter(prefix="/questions", tags=["questions"])
-
-
-def _uuid6() -> str:
-    return str(uuid.uuid4())[:8]
 
 
 @router.post("", response_model=QuestionResponse, status_code=status.HTTP_201_CREATED)
@@ -28,7 +24,7 @@ async def ask_question(
     session: AsyncSession = Depends(get_session),
 ):
     project_id, _ = project
-    q_id = f"q-{_uuid6()}"
+    q_id = f"q-{short_id()}"
     question = Question(
         id=q_id,
         project_id=project_id,
