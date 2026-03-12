@@ -10,13 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-03-07
 
 ### Added
-- Initial release of InterAgent
+- Initial release of AgentWeave
 - Core session management
 - Task creation and management
 - Messaging system between agents
-- CLI tool (`interagent` command)
+- CLI tool (`agentweave` command)
 - Python API for programmatic use
-- File-based protocol using `.interagent/` directory
+- File-based protocol using `.agentweave/` directory
 - Support for Claude and Kimi collaboration
 - Role-based collaboration (Principal, Delegate, Reviewer)
 - Task status tracking (pending → assigned → in_progress → completed → approved)

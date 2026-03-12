@@ -10,7 +10,7 @@ from .utils import load_json
 
 
 class Watchdog:
-    """Monitors .interagent/ (local) or a remote transport for changes."""
+    """Monitors .agentweave/ (local) or a remote transport for changes."""
 
     def __init__(
         self,
@@ -52,12 +52,12 @@ class Watchdog:
         if event_type == "new_message":
             print(f"\n[MSG] New message for {data['to']} from {data['from']}")
             print(f"   Subject: {data.get('subject', '(no subject)')}")
-            print(f"   Run: interagent inbox --agent {data['to']}")
+            print(f"   Run: agentweave inbox --agent {data['to']}")
             print()
         elif event_type == "new_task":
             print(f"\n[TASK] New task assigned to {data.get('assignee', 'unknown')}")
             print(f"   Title: {data.get('title', 'Untitled')}")
-            print(f"   Run: interagent task show {data['id']}")
+            print(f"   Run: agentweave task show {data['id']}")
             print()
         elif event_type == "task_completed":
             print(f"\n[OK] Task completed: {data.get('title', 'Untitled')}")
@@ -94,7 +94,7 @@ class Watchdog:
         """Start watching."""
         from .eventlog import log_event, write_heartbeat
         transport_type = self.transport.get_transport_type()
-        print(f"[WATCH] InterAgent Watchdog started (transport: {transport_type})")
+        print(f"[WATCH] AgentWeave Watchdog started (transport: {transport_type})")
         if transport_type == "local":
             print(f"   Watching: {MESSAGES_PENDING_DIR}")
             print(f"   Watching: {TASKS_ACTIVE_DIR}")
@@ -135,7 +135,7 @@ class Watchdog:
             self._check_once_remote()
 
     def _check_once_local(self):
-        """Scan local .interagent/ filesystem for new files."""
+        """Scan local .agentweave/ filesystem for new files."""
         import time as _t
         from .eventlog import log_event
         current_messages = self._scan_messages()
@@ -188,7 +188,7 @@ class Watchdog:
         """Scan remote transport for new files without consuming messages.
 
         The watchdog only notifies — it does NOT add message IDs to the seen
-        set. Archiving happens via `interagent msg read` or `interagent inbox`.
+        set. Archiving happens via `agentweave msg read` or `agentweave inbox`.
         This means the same message appears in both watchdog notifications AND
         the inbox command until explicitly archived.
         """
@@ -266,7 +266,7 @@ def _make_ping_callback(agents: List[str], pinged_at: Optional[Dict[str, float]]
             return
 
         prompt = (
-            f"You have a new InterAgent message from {data.get('from', 'another agent')}. "
+            f"You have a new AgentWeave message from {data.get('from', 'another agent')}. "
             f"Call get_inbox('{recipient}') to retrieve it and respond."
         )
         cmd = _agent_ping_cmd(recipient, prompt)
@@ -301,7 +301,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Watch for InterAgent changes",
+        description="Watch for AgentWeave changes",
     )
     parser.add_argument(
         "--interval", "-i",
@@ -345,7 +345,7 @@ def main():
             if not session:
                 print(
                     "Error: --auto-ping without --agent requires an active session. "
-                    "Run: interagent init",
+                    "Run: agentweave init",
                     file=sys.stderr,
                 )
                 sys.exit(1)

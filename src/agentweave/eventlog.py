@@ -1,7 +1,7 @@
-"""Structured event logging for InterAgent.
+"""Structured event logging for AgentWeave.
 
 All public functions swallow exceptions so event logging never crashes callers.
-Events are appended as JSON lines to .interagent/logs/events.jsonl.
+Events are appended as JSON lines to .agentweave/logs/events.jsonl.
 """
 
 import json

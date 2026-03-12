@@ -1,6 +1,6 @@
-# Contributing to InterAgent
+# Contributing to AgentWeave
 
-Thank you for your interest in contributing to InterAgent! This document provides guidelines for contributing.
+Thank you for your interest in contributing to AgentWeave! This document provides guidelines for contributing.
 
 ---
 
@@ -9,8 +9,8 @@ Thank you for your interest in contributing to InterAgent! This document provide
 1. **Fork the repository**
 2. **Clone your fork**
    ```bash
-   git clone https://github.com/yourusername/interagent.git
-   cd interagent
+   git clone https://github.com/yourusername/agentweave.git
+   cd agentweave
    ```
 3. **Install in development mode**
    ```bash
@@ -55,7 +55,7 @@ pytest
 With coverage:
 
 ```bash
-pytest --cov=interagent
+pytest --cov=agentweave
 ```
 
 ---
@@ -156,8 +156,8 @@ We welcome feature suggestions! Please:
 ## 📁 Project Structure
 
 ```
-interagent/
-├── src/interagent/          # Main package
+agentweave/
+├── src/agentweave/          # Main package
 │   ├── __init__.py
 │   ├── cli.py               # CLI
 │   ├── session.py           # Session management
@@ -205,8 +205,8 @@ Be respectful, inclusive, and constructive.
 
 ## ❓ Questions?
 
-- **Issues:** [GitHub Issues](https://github.com/yourusername/interagent/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/interagent/discussions)
+- **Issues:** [GitHub Issues](https://github.com/yourusername/agentweave/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/yourusername/agentweave/discussions)
 
 ---
 

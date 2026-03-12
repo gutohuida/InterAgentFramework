@@ -1,4 +1,4 @@
-"""Task management for InterAgent."""
+"""Task management for AgentWeave."""
 
 import re
 from enum import Enum

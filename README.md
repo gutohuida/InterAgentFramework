@@ -1,12 +1,12 @@
-# InterAgent
+# AgentWeave
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PyPI version](https://badge.fury.io/py/interagent-framework.svg)](https://badge.fury.io/py/interagent-framework)
+[![PyPI version](https://badge.fury.io/py/agentweave-ai.svg)](https://badge.fury.io/py/agentweave-ai)
 
 > **A collaboration framework for N AI agents — Claude, Kimi, Gemini, Codex, and more**
 
-InterAgent lets multiple AI agents work together on the same project. Agents communicate through a shared `.interagent/` directory and a local MCP server. With MCP enabled, agents call `send_message` and `get_inbox` as native tools — **no manual relay needed**.
+AgentWeave lets multiple AI agents work together on the same project. Agents communicate through a shared `.agentweave/` directory and a local MCP server. With MCP enabled, agents call `send_message` and `get_inbox` as native tools — **no manual relay needed**.
 
 ---
 
@@ -40,24 +40,24 @@ Claude sends message via send_message tool
 
 ```bash
 # Base package (manual relay mode)
-pip install interagent-framework
+pip install agentweave-ai
 
 # With MCP server (zero-relay mode)
-pip install "interagent-framework[mcp]"
+pip install "agentweave-ai[mcp]"
 ```
 
 ### 2. Initialize (once per project)
 
 ```bash
 cd your-project/
-interagent init --project "My App" --agents claude,kimi
+agentweave init --project "My App" --agents claude,kimi
 ```
 
 Creates:
 - `AI_CONTEXT.md` (project root) — project DNA: stack, architecture, code standards (static, rarely changes)
-- `.interagent/AGENTS.md` — collaboration protocol: MCP vs manual mode, workflow (per-session)
-- `.interagent/ROLES.md` — agent role assignments: who does what (per-session)
-- `.interagent/shared/context.md` — current focus: what's being worked on today (changes daily)
+- `.agentweave/AGENTS.md` — collaboration protocol: MCP vs manual mode, workflow (per-session)
+- `.agentweave/ROLES.md` — agent role assignments: who does what (per-session)
+- `.agentweave/shared/context.md` — current focus: what's being worked on today (changes daily)
 
 **Supported agents:** claude, kimi, gemini, codex, aider, cline, cursor, windsurf, copilot, and any name matching `^[a-zA-Z0-9_-]{1,32}$`
 
@@ -76,11 +76,11 @@ Agents read all four files on session start.
 
 ### 4a. Start working — manual relay mode
 
-Just prompt Claude. It runs all `interagent` CLI commands via Bash automatically:
+Just prompt Claude. It runs all `agentweave` CLI commands via Bash automatically:
 
 > "Claude, delegate the database schema design to Kimi."
 
-Claude runs `interagent quick` and `interagent relay`, then shows you a prompt to paste into Kimi Code. When Kimi is done, tell Claude and it reads the reply.
+Claude runs `agentweave quick` and `agentweave relay`, then shows you a prompt to paste into Kimi Code. When Kimi is done, tell Claude and it reads the reply.
 
 ### 4b. Start working — zero-relay MCP mode
 
@@ -88,24 +88,24 @@ Claude runs `interagent quick` and `interagent relay`, then shows you a prompt t
 
 ```bash
 # Configure the MCP server in both agents (auto-detects claude and kimi CLI)
-interagent mcp setup
+agentweave mcp setup
 ```
 
 Or manually:
 
 ```bash
-claude mcp add interagent -- interagent-mcp
-kimi mcp add --transport stdio interagent -- interagent-mcp
+claude mcp add agentweave -- agentweave-mcp
+kimi mcp add --transport stdio agentweave -- agentweave-mcp
 ```
 
 **Start the watchers** (two terminals, keep them running):
 
 ```bash
 # Terminal 1 — notifies Claude when Kimi sends a message
-interagent-watch --auto-ping --agent claude
+agentweave-watch --auto-ping --agent claude
 
 # Terminal 2 — notifies Kimi when Claude sends a message
-interagent-watch --auto-ping --agent kimi
+agentweave-watch --auto-ping --agent kimi
 ```
 
 **Now just prompt Claude.** It uses `send_message` and `get_task` as native MCP tools. When it sends a message to Kimi, the watchdog fires `kimi --print -p "check inbox"` automatically, and the loop continues without you.
@@ -134,80 +134,80 @@ Once configured, both agents have these tools available natively:
 ### Session
 
 ```bash
-interagent init --project "Name" --principal claude   # Initialize
-interagent status                                      # Full status
-interagent summary                                     # Quick overview
+agentweave init --project "Name" --principal claude   # Initialize
+agentweave status                                      # Full status
+agentweave summary                                     # Quick overview
 ```
 
 ### Delegation (manual relay mode)
 
 ```bash
-interagent quick --to kimi "Task description"         # Create + assign task
-interagent relay --agent kimi                         # Generate relay prompt
+agentweave quick --to kimi "Task description"         # Create + assign task
+agentweave relay --agent kimi                         # Generate relay prompt
 ```
 
 ### Tasks
 
 ```bash
-interagent task list                                  # List all tasks
-interagent task show <task_id>                        # View task details
-interagent task update <task_id> --status in_progress
-interagent task update <task_id> --status completed
-interagent task update <task_id> --status approved
-interagent task update <task_id> --status revision_needed --note "Fix X"
+agentweave task list                                  # List all tasks
+agentweave task show <task_id>                        # View task details
+agentweave task update <task_id> --status in_progress
+agentweave task update <task_id> --status completed
+agentweave task update <task_id> --status approved
+agentweave task update <task_id> --status revision_needed --note "Fix X"
 ```
 
 ### Messaging
 
 ```bash
-interagent inbox --agent claude                       # Check Claude's inbox
-interagent msg send --to claude --subject "Done" --message "Implemented X"
+agentweave inbox --agent claude                       # Check Claude's inbox
+agentweave msg send --to claude --subject "Done" --message "Implemented X"
 ```
 
 ### MCP server
 
 ```bash
-interagent mcp setup                                  # Configure in Claude + Kimi (once)
-interagent-mcp                                        # Run the MCP server (stdio)
+agentweave mcp setup                                  # Configure in Claude + Kimi (once)
+agentweave-mcp                                        # Run the MCP server (stdio)
 ```
 
 ### Watchdog
 
 ```bash
-interagent-watch                                      # Monitor + print notifications
-interagent-watch --auto-ping --agent claude           # Auto-notify Claude on new messages
-interagent-watch --auto-ping --agent kimi             # Auto-notify Kimi on new messages
-interagent-watch --interval 3                         # Custom poll interval (seconds)
+agentweave-watch                                      # Monitor + print notifications
+agentweave-watch --auto-ping --agent claude           # Auto-notify Claude on new messages
+agentweave-watch --auto-ping --agent kimi             # Auto-notify Kimi on new messages
+agentweave-watch --interval 3                         # Custom poll interval (seconds)
 ```
 
 ### Transport (cross-machine)
 
 ```bash
-interagent transport setup --type git                 # Enable git transport
-interagent transport status                           # Show active transport
-interagent transport pull                             # Force immediate fetch
-interagent transport disable                          # Revert to local
+agentweave transport setup --type git                 # Enable git transport
+agentweave transport status                           # Show active transport
+agentweave transport pull                             # Force immediate fetch
+agentweave transport disable                          # Revert to local
 ```
 
 ### Template Maintenance
 
 ```bash
-interagent update-template --agent claude --template-path ~/projects/template.txt
-interagent update-template --agent claude --focus "sub-agents"
+agentweave update-template --agent claude --template-path ~/projects/template.txt
+agentweave update-template --agent claude --focus "sub-agents"
 ```
 
 ---
 
 ## Cross-Machine Collaboration
 
-By default, InterAgent works on a single machine. For cross-machine sync, enable **git transport**:
+By default, AgentWeave works on a single machine. For cross-machine sync, enable **git transport**:
 
 ```bash
 # Both developers run this (same git remote required)
-interagent transport setup --type git --cluster alice   # your workspace name
+agentweave transport setup --type git --cluster alice   # your workspace name
 ```
 
-This creates an orphan branch (`interagent/collab`) on your git remote. Messages and tasks sync through it using git plumbing — your working tree and current branch are never touched.
+This creates an orphan branch (`agentweave/collab`) on your git remote. Messages and tasks sync through it using git plumbing — your working tree and current branch are never touched.
 
 Messages are stamped `alice.claude → bob.kimi` so multiple workspaces can share the same remote.
 
@@ -232,9 +232,9 @@ pending → assigned → in_progress → completed → under_review → approved
 AI_CONTEXT.md             # Project DNA — stack, architecture, standards (static)
 ```
 
-### .interagent/ Directory
+### .agentweave/ Directory
 ```
-.interagent/
+.agentweave/
 ├── AGENTS.md             # Collaboration protocol — MCP vs manual, workflow
 ├── ROLES.md              # Agent role assignments — who owns what domain
 ├── README.md             # Quick command reference
@@ -283,7 +283,7 @@ AI_CONTEXT.md             # Project DNA — stack, architecture, standards (stat
 
 In hierarchical mode (default), the principal assigns work and reviews results. In peer mode, agents can assign tasks to each other.
 
-Roles are defined in `.interagent/ROLES.md` — edit this file to customize responsibilities.
+Roles are defined in `.agentweave/ROLES.md` — edit this file to customize responsibilities.
 
 ---
 
@@ -291,11 +291,11 @@ Roles are defined in `.interagent/ROLES.md` — edit this file to customize resp
 
 | Phase | Status | Description |
 |---|---|---|
-| Local transport | Done | Single-machine via `.interagent/` filesystem |
+| Local transport | Done | Single-machine via `.agentweave/` filesystem |
 | Git transport | Done (v0.2.0) | Cross-machine via orphan branch, zero infra |
 | N-agent support | Done (v0.3.0) | Multi-agent teams with ROLES.md and cluster naming |
 | Local MCP server | Done (v0.4.0) | Native tool integration, zero-relay with watchdog pinger |
-| InterAgent Hub | Planned | Hosted MCP server, multi-team, web dashboard |
+| AgentWeave Hub | Planned | Hosted MCP server, multi-team, web dashboard |
 
 The Hub (next phase) will be a **hosted MCP server** — any agent connects via HTTP, enabling real-time delivery without polling and a web dashboard for oversight. See [ROADMAP.md](ROADMAP.md) for the full plan.
 
@@ -305,14 +305,14 @@ The Hub (next phase) will be a **hosted MCP server** — any agent connects via 
 
 ```bash
 # From PyPI — base (manual relay mode)
-pip install interagent-framework
+pip install agentweave-ai
 
 # From PyPI — with MCP server (zero-relay mode)
-pip install "interagent-framework[mcp]"
+pip install "agentweave-ai[mcp]"
 
 # From source
-git clone https://github.com/gutohuida/InterAgentFramework.git
-cd InterAgentFramework
+git clone https://github.com/gutohuida/AgentWeaveFramework.git
+cd AgentWeaveFramework
 pip install -e ".[mcp]"
 ```
 
@@ -321,33 +321,33 @@ pip install -e ".[mcp]"
 ## FAQ
 
 **Q: Do I need to run CLI commands during my session?**
-No. After `interagent init`, just talk to Claude. It runs all `interagent` commands via Bash automatically. In MCP mode, even the relay step is automated.
+No. After `agentweave init`, just talk to Claude. It runs all `agentweave` commands via Bash automatically. In MCP mode, even the relay step is automated.
 
 **Q: What's the difference between manual relay and MCP mode?**
 In manual mode, you copy-paste a relay prompt from Claude to Kimi. In MCP mode, the watchdog fires a one-liner at the agent's CLI when a message arrives — no human involvement after the watchers are started.
 
 **Q: Do the watchdog processes need to stay running?**
-Yes. Run `interagent-watch --auto-ping --agent <name>` in a terminal (or as a background process / system service) for each agent you want auto-notified. If they're not running, messages still queue up — agents just won't be auto-triggered.
+Yes. Run `agentweave-watch --auto-ping --agent <name>` in a terminal (or as a background process / system service) for each agent you want auto-notified. If they're not running, messages still queue up — agents just won't be auto-triggered.
 
 **Q: How do delegate agents know how to use the system?**
-`interagent init` writes `.interagent/AGENTS.md` — a complete guide covering commands, workflow, and protocol. In MCP mode, agents use the registered tools directly instead of CLI commands.
+`agentweave init` writes `.agentweave/AGENTS.md` — a complete guide covering commands, workflow, and protocol. In MCP mode, agents use the registered tools directly instead of CLI commands.
 
-**Q: Should I commit `.interagent/` to Git?**
+**Q: Should I commit `.agentweave/` to Git?**
 Partially. The `.gitignore` excludes runtime state (tasks, messages, session.json, transport.json) but keeps AGENTS.md and README.md.
 
 **Q: Can I use this with a single agent?**
 Yes — skip the relay step. Session, task, and summary commands are useful even for single-agent projects.
 
 **Q: Do both developers need the same git remote for cross-machine sync?**
-Yes. Git transport requires a shared remote (e.g. `origin`). One developer creates the orphan branch with `interagent transport setup --type git`, the other connects with the same command.
+Yes. Git transport requires a shared remote (e.g. `origin`). One developer creates the orphan branch with `agentweave transport setup --type git`, the other connects with the same command.
 
 ---
 
 ## Links
 
-- **GitHub:** https://github.com/gutohuida/InterAgentFramework
-- **PyPI:** https://pypi.org/project/interagent-framework/
-- **Issues:** https://github.com/gutohuida/InterAgentFramework/issues
+- **GitHub:** https://github.com/gutohuida/AgentWeaveFramework
+- **PyPI:** https://pypi.org/project/agentweave-ai/
+- **Issues:** https://github.com/gutohuida/AgentWeaveFramework/issues
 - **Roadmap:** [ROADMAP.md](ROADMAP.md)
 
 ---

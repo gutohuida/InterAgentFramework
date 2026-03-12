@@ -1,4 +1,4 @@
-"""Utility functions for InterAgent."""
+"""Utility functions for AgentWeave."""
 
 import json
 import uuid
@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from .constants import (
-    INTERAGENT_DIR,
+    AGENTWEAVE_DIR,
     AGENTS_DIR,
     TASKS_ACTIVE_DIR,
     TASKS_COMPLETED_DIR,
@@ -21,7 +21,7 @@ from .constants import (
 def ensure_dirs() -> None:
     """Ensure all required directories exist."""
     for d in [
-        INTERAGENT_DIR,
+        AGENTWEAVE_DIR,
         AGENTS_DIR,
         TASKS_ACTIVE_DIR,
         TASKS_COMPLETED_DIR,

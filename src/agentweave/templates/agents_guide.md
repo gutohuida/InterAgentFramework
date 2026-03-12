@@ -1,4 +1,4 @@
-# InterAgent Collaboration Guide
+# AgentWeave Collaboration Guide
 
 > **Purpose:** How to collaborate with other AI agents in this project.
 >
@@ -10,12 +10,12 @@
 
 ## What This Is
 
-InterAgent is a multi-agent collaboration protocol. Any number of AI agents can work
-together on the same project through a shared `.interagent/` directory and optional MCP tools.
+AgentWeave is a multi-agent collaboration protocol. Any number of AI agents can work
+together on the same project through a shared `.agentweave/` directory and optional MCP tools.
 
 **Session mode:** {mode}
 **Principal agent:** {principal} — architecture, planning, review, final decisions
-**Other agents:** {agents_list} — see `.interagent/ROLES.md` for role assignments
+**Other agents:** {agents_list} — see `.agentweave/ROLES.md` for role assignments
 
 ---
 
@@ -26,7 +26,7 @@ Use them directly. No relay prompts, no manual steps. The watchdog daemon will
 automatically notify the other agent's CLI when you send a message.
 
 **If you do NOT have those tools (manual relay mode):**
-Use `interagent relay --agent <name>` to generate a relay prompt, then ask the
+Use `agentweave relay --agent <name>` to generate a relay prompt, then ask the
 user to paste it into the target agent's session.
 
 ---
@@ -71,26 +71,26 @@ get_task("task-id") → full task details
 
 ```bash
 # Principal: assign a task and generate the relay prompt
-interagent quick --to <agent> "Task description"
-interagent relay --agent <agent>      # → copy output, give to user for that agent
+agentweave quick --to <agent> "Task description"
+agentweave relay --agent <agent>      # → copy output, give to user for that agent
 
 # After user says "Agent X is done"
-interagent inbox --agent {principal}
-interagent summary
+agentweave inbox --agent {principal}
+agentweave summary
 
 # Task management
-interagent task show <task_id>
-interagent task update <task_id> --status approved
-interagent task update <task_id> --status revision_needed --note "Fix X"
-interagent task list
+agentweave task show <task_id>
+agentweave task update <task_id> --status approved
+agentweave task update <task_id> --status revision_needed --note "Fix X"
+agentweave task list
 ```
 
 ### Delegate in relay mode:
 ```bash
-interagent inbox --agent <your-agent-name>
-interagent task update <task_id> --status in_progress
-interagent task update <task_id> --status completed
-interagent msg send --to {principal} --subject "Done: <title>" --message "..."
+agentweave inbox --agent <your-agent-name>
+agentweave task update <task_id> --status in_progress
+agentweave task update <task_id> --status completed
+agentweave msg send --to {principal} --subject "Done: <title>" --message "..."
 ```
 
 ---
@@ -100,8 +100,8 @@ interagent msg send --to {principal} --subject "Done: <title>" --message "..."
 | Order | File | Purpose |
 |-------|------|---------|
 | 1 | `AI_CONTEXT.md` (project root) | Project overview, tech stack, commands, code standards |
-| 2 | `.interagent/ROLES.md` | Role assignments (which agent owns which domain) |
-| 3 | `.interagent/shared/context.md` | Current project state: what's being worked on, recent decisions |
+| 2 | `.agentweave/ROLES.md` | Role assignments (which agent owns which domain) |
+| 3 | `.agentweave/shared/context.md` | Current project state: what's being worked on, recent decisions |
 
 ---
 
@@ -116,13 +116,13 @@ Bob's workspace:   cluster "bob"    →  bob.gemini (frontend),    bob.codex (QA
 
 Setup per developer:
 ```bash
-interagent transport setup --type git --cluster alice
+agentweave transport setup --type git --cluster alice
 ```
 
 Addressing across clusters:
 ```bash
-interagent msg send --to bob.gemini --message "API contract is ready"
-interagent msg send --to kimi --message "local-only message"
+agentweave msg send --to bob.gemini --message "API contract is ready"
+agentweave msg send --to kimi --message "local-only message"
 ```
 
 ---
@@ -131,11 +131,11 @@ interagent msg send --to kimi --message "local-only message"
 
 Either agent can ask another to invoke one of their specialized sub-agents:
 
-1. Write `.interagent/shared/agent-request-[topic].md`:
+1. Write `.agentweave/shared/agent-request-[topic].md`:
    ```
    {principal}: run security-reviewer on src/auth/login.py
    Focus: SQL injection, session management, credential exposure
-   Write findings to: .interagent/shared/security-findings.md
+   Write findings to: .agentweave/shared/security-findings.md
    ```
 2. Use `send_message` (MCP) or tell the user (relay) to notify the target agent.
 
@@ -144,7 +144,7 @@ Either agent can ask another to invoke one of their specialized sub-agents:
 ## File Reference
 
 ```
-.interagent/
+.agentweave/
   session.json          Session config (id, mode, principal, agents)
   AGENTS.md             This file — collaboration guide
   ROLES.md              Agent role assignments (edit freely)
@@ -168,31 +168,31 @@ Either agent can ask another to invoke one of their specialized sub-agents:
 
 ```bash
 # Status and overview
-interagent status              # Full status with per-agent breakdown
-interagent summary             # Quick summary for relay decisions
+agentweave status              # Full status with per-agent breakdown
+agentweave summary             # Quick summary for relay decisions
 
 # Task management
-interagent task create --title "Task name" --assignee <agent>
-interagent task list           # List all active tasks
-interagent task show <id>      # Show task details
-interagent task update <id> --status in_progress
-interagent task update <id> --status completed
+agentweave task create --title "Task name" --assignee <agent>
+agentweave task list           # List all active tasks
+agentweave task show <id>      # Show task details
+agentweave task update <id> --status in_progress
+agentweave task update <id> --status completed
 
 # Delegation
-interagent quick --to <agent> "Task description"
-interagent relay --agent <agent>   # Generate relay prompt
+agentweave quick --to <agent> "Task description"
+agentweave relay --agent <agent>   # Generate relay prompt
 
 # Messaging
-interagent inbox --agent <agent>
-interagent msg send --to <agent> --message "..."
+agentweave inbox --agent <agent>
+agentweave msg send --to <agent> --message "..."
 
 # Watchdog (auto-ping daemon)
-interagent start               # Start background watchdog
-interagent stop                # Stop watchdog
-interagent log -f              # Watch log in real-time
+agentweave start               # Start background watchdog
+agentweave stop                # Stop watchdog
+agentweave log -f              # Watch log in real-time
 
 # Transport (cross-machine sync)
-interagent transport setup --type git
-interagent transport status
-interagent transport pull
+agentweave transport setup --type git
+agentweave transport status
+agentweave transport pull
 ```

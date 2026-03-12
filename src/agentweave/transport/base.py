@@ -1,4 +1,4 @@
-"""Base transport interface for InterAgent."""
+"""Base transport interface for AgentWeave."""
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
@@ -9,7 +9,7 @@ class BaseTransport(ABC):
 
     All message and task I/O goes through this interface, enabling
     LocalTransport (filesystem), GitTransport (orphan branch), and
-    future McpTransport (InterAgent Hub) to be swapped transparently.
+    future McpTransport (AgentWeave Hub) to be swapped transparently.
     """
 
     @abstractmethod

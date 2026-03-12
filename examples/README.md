@@ -1,6 +1,6 @@
-# InterAgent Examples
+# AgentWeave Examples
 
-This directory contains example scripts demonstrating how to use InterAgent.
+This directory contains example scripts demonstrating how to use AgentWeave.
 
 ---
 
@@ -27,11 +27,11 @@ This directory contains example scripts demonstrating how to use InterAgent.
 ### Prerequisites
 
 ```bash
-# Install InterAgent
+# Install AgentWeave
 pip install -e ..
 
 # Or if already installed
-pip install interagent
+pip install agentweave
 ```
 
 ### Python Examples
@@ -63,7 +63,7 @@ cli_session.bat
 ### Scenario 1: Simple Task Delegation
 
 ```python
-from interagent import Session, Task
+from agentweave import Session, Task
 
 # Initialize
 session = Session.create("My Project", principal="claude")
@@ -89,7 +89,7 @@ task.save()
 ### Scenario 2: Code Review Workflow
 
 ```python
-from interagent import Task, Message, MessageBus
+from agentweave import Task, Message, MessageBus
 
 # Kimi completes work
 task = Task.load("task-xxx")
@@ -120,16 +120,16 @@ task.save()
 
 ```bash
 # Initialize
-interagent init --project "API" --principal claude
+agentweave init --project "API" --principal claude
 
 # Create task
-interagent task create --title "Design" --assignee kimi
+agentweave task create --title "Design" --assignee kimi
 
 # Check status
-interagent status
+agentweave status
 
 # Send message
-interagent msg send --to kimi --message "Task assigned!"
+agentweave msg send --to kimi --message "Task assigned!"
 ```
 
 ---
@@ -162,7 +162,7 @@ Example: [Name]
 [Description of what this example demonstrates]
 """
 
-from interagent import Session, Task, Message, MessageBus
+from agentweave import Session, Task, Message, MessageBus
 
 
 def main():

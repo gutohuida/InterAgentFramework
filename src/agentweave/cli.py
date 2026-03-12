@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Command-line interface for InterAgent."""
+"""Command-line interface for AgentWeave."""
 
 import argparse
 import sys
@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from . import __version__
 from .constants import (
-    VALID_AGENTS, VALID_MODES, INTERAGENT_DIR, SHARED_DIR, TRANSPORT_CONFIG_FILE,
+    VALID_AGENTS, VALID_MODES, AGENTWEAVE_DIR, SHARED_DIR, TRANSPORT_CONFIG_FILE,
     DEFAULT_AGENTS, DEFAULT_AGENT_ROLES, DEV_ROLE_LABELS,
 )
 from .session import Session
@@ -29,8 +29,8 @@ from .utils import (
 
 def cmd_init(args: argparse.Namespace) -> int:
     """Initialize a new session."""
-    if INTERAGENT_DIR.exists() and not args.force:
-        print_warning(".interagent/ already exists. Use --force to overwrite.")
+    if AGENTWEAVE_DIR.exists() and not args.force:
+        print_warning(".agentweave/ already exists. Use --force to overwrite.")
         return 1
 
     ensure_dirs()
@@ -54,11 +54,11 @@ def cmd_init(args: argparse.Namespace) -> int:
 
         # Create README
         agents_listed = "\n".join(
-            f"# interagent relay --agent {ag}" for ag in session.agent_names
+            f"# agentweave relay --agent {ag}" for ag in session.agent_names
         )
-        readme_path = INTERAGENT_DIR / "README.md"
+        readme_path = AGENTWEAVE_DIR / "README.md"
         with open(readme_path, "w", encoding="utf-8") as f:
-            f.write(f"""# InterAgent Session: {session.name}
+            f.write(f"""# AgentWeave Session: {session.name}
 
 **ID:** {session.id}
 **Mode:** {session.mode}
@@ -69,25 +69,25 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 ```bash
 # Check status
-interagent status
+agentweave status
 
 # Create task for any agent
-interagent task create --title "Task name" --assignee <agent>
+agentweave task create --title "Task name" --assignee <agent>
 
 # List tasks
-interagent task list
+agentweave task list
 
 # Quick delegation
-interagent quick --to <agent> "Implement auth"
+agentweave quick --to <agent> "Implement auth"
 
 # Check inbox
-interagent inbox --agent <agent>
+agentweave inbox --agent <agent>
 
 # Get relay prompt (for each agent)
 {agents_listed}
 
 # Summary
-interagent summary
+agentweave summary
 ```
 
 ## Files
@@ -113,7 +113,7 @@ interagent summary
                 .replace("{agents_list}", agents_list)
                 .replace("{mode}", session.mode)
             )
-            agents_path = INTERAGENT_DIR / "AGENTS.md"
+            agents_path = AGENTWEAVE_DIR / "AGENTS.md"
             with open(agents_path, "w", encoding="utf-8") as f:
                 f.write(agents_guide)
         except FileNotFoundError:
@@ -137,7 +137,7 @@ interagent summary
                 .replace("{principal}", session.principal)
                 .replace("{role_rows}", "\n".join(role_rows))
             )
-            roles_path = INTERAGENT_DIR / "ROLES.md"
+            roles_path = AGENTWEAVE_DIR / "ROLES.md"
             with open(roles_path, "w", encoding="utf-8") as f:
                 f.write(roles_content)
         except FileNotFoundError:
@@ -205,13 +205,13 @@ interagent summary
         print(f"   ID:      {session.id}")
         print(f"   Mode:    {session.mode}")
         print(f"   Agents:  {', '.join(session.agent_names)}  (principal: {session.principal})")
-        print(f"\n[DIR] Created .interagent/")
+        print(f"\n[DIR] Created .agentweave/")
         print("     AGENTS.md            <- collaboration protocol (MCP vs manual, workflow)")
         print("     ROLES.md             <- agent role assignments (edit freely)")
         print("     shared/context.md    <- current focus, recent decisions (update daily)")
         print("\n[FILE] Created AI_CONTEXT.md at project root")
         print("     <- project DNA: stack, architecture, code standards (rarely changes)")
-        print("     <- run `interagent update-template --agent claude` to keep it current")
+        print("     <- run `agentweave update-template --agent claude` to keep it current")
         print("\nFile purposes:")
         print("  • AI_CONTEXT.md       — What is this project? (static, per-project)")
         print("  • AGENTS.md           — How do we collaborate? (per-session)")
@@ -219,13 +219,13 @@ interagent summary
         print("  • shared/context.md   — What are we doing today? (changes daily)")
         print("\nNext steps:")
         print("1. Fill in the [Replace with...] sections in AI_CONTEXT.md")
-        print("2. Edit .interagent/ROLES.md to assign the right dev roles")
-        print("3. Update .interagent/shared/context.md with today's focus")
+        print("2. Edit .agentweave/ROLES.md to assign the right dev roles")
+        print("3. Update .agentweave/shared/context.md with today's focus")
         print(f'4. Tell {session.principal.capitalize()}: "Read AI_CONTEXT.md, AGENTS.md, ROLES.md, and shared/context.md"')
         print()
         print("Zero-relay MCP mode (optional):")
-        print("  interagent mcp setup   # configure MCP server in both agents (once)")
-        print("  interagent start       # launch background watchdog — agents notify each other automatically")
+        print("  agentweave mcp setup   # configure MCP server in both agents (once)")
+        print("  agentweave start       # launch background watchdog — agents notify each other automatically")
         return 0
 
     except ValueError as e:
@@ -260,7 +260,7 @@ def cmd_status(_args: argparse.Namespace) -> int:
 
     session = Session.load()
     if not session:
-        print_error("No session found. Run: interagent init")
+        print_error("No session found. Run: agentweave init")
         return 1
 
     print(f"[STAT] Session: {session.name}")
@@ -328,7 +328,7 @@ def cmd_summary(_args: argparse.Namespace) -> int:
     """Show quick summary for relay decisions."""
     session = Session.load()
     if not session:
-        print_error("No session found. Run: interagent init")
+        print_error("No session found. Run: agentweave init")
         return 1
     
     print("=" * 60)
@@ -409,10 +409,10 @@ def cmd_summary(_args: argparse.Namespace) -> int:
     print("[QUICK COMMANDS]")
     if ready_for_review:
         task_id = ready_for_review[0].id
-        print(f"  interagent task show {task_id}")
+        print(f"  agentweave task show {task_id}")
     for ag in all_agents:
         if msgs_by_agent[ag]:
-            print(f"  interagent relay --agent {ag}")
+            print(f"  agentweave relay --agent {ag}")
     print()
     
     return 0
@@ -443,11 +443,11 @@ def cmd_relay(args: argparse.Namespace) -> int:
     print()
     
     # Generate the prompt
-    print(f"@{agent} - You have work in the InterAgent collaboration system.")
+    print(f"@{agent} - You have work in the AgentWeave collaboration system.")
     print()
     print(f"Your role: {role}")
-    print(f"Collaboration guide: read .interagent/AGENTS.md for commands, workflow, and protocol.")
-    print(f"Project context: read .interagent/shared/context.md before starting.")
+    print(f"Collaboration guide: read .agentweave/AGENTS.md for commands, workflow, and protocol.")
+    print(f"Project context: read .agentweave/shared/context.md before starting.")
     print()
     
     if pending_tasks:
@@ -456,11 +456,11 @@ def cmd_relay(args: argparse.Namespace) -> int:
             print(f"   - {task.title} ({task.id})")
         print()
         print("Please:")
-        print("1. Check .interagent/tasks/active/ for details")
-        print("2. Run: interagent task update <task_id> --status in_progress")
+        print("1. Check .agentweave/tasks/active/ for details")
+        print("2. Run: agentweave task update <task_id> --status in_progress")
         print("3. Do the work")
-        print("4. Run: interagent task update <task_id> --status completed")
-        print("5. Send a message when done: interagent msg send --to <other> --message 'Done!'")
+        print("4. Run: agentweave task update <task_id> --status completed")
+        print("5. Send a message when done: agentweave msg send --to <other> --message 'Done!'")
         print()
     
     if messages:
@@ -469,15 +469,15 @@ def cmd_relay(args: argparse.Namespace) -> int:
             print(f"   From {msg.sender}: {msg.subject or '(no subject)'}")
         print()
         print("Check your inbox:")
-        print(f"  interagent inbox --agent {agent}")
+        print(f"  agentweave inbox --agent {agent}")
         print()
     
     if not pending_tasks and not messages:
         print("No pending tasks or messages.")
         print()
         print("Useful commands:")
-        print(f"  interagent status           # Check overall status")
-        print(f"  interagent summary          # Quick summary")
+        print(f"  agentweave status           # Check overall status")
+        print(f"  agentweave summary          # Quick summary")
         print()
     
     print("-" * 60)
@@ -492,7 +492,7 @@ def cmd_quick(args: argparse.Namespace) -> int:
     
     session = Session.load()
     if not session:
-        print_error("No session found. Run: interagent init")
+        print_error("No session found. Run: agentweave init")
         return 1
     
     sender = args.from_agent or session.principal
@@ -541,7 +541,7 @@ def cmd_quick(args: argparse.Namespace) -> int:
             content=f"You have been assigned a task: {task_desc}\n\n"
                     f"Task ID: {task.id}\n"
                     f"Priority: {task.priority}\n\n"
-                    f"To start: interagent task update {task.id} --status in_progress",
+                    f"To start: agentweave task update {task.id} --status in_progress",
             message_type="delegation",
             task_id=task.id,
         )
@@ -556,7 +556,7 @@ def cmd_quick(args: argparse.Namespace) -> int:
         print(f"   Assigned to: {recipient}")
         print()
         print("Next step:")
-        print(f"  interagent relay --agent {recipient}")
+        print(f"  agentweave relay --agent {recipient}")
         print()
         print("This will generate the prompt to copy to the agent.")
         
@@ -610,7 +610,7 @@ def cmd_task_create(args: argparse.Namespace) -> int:
         print(f"   Title: {task.title}")
         print(f"   Assignee: {task.assignee or 'Unassigned'}")
         print(f"   Priority: {task.priority}")
-        print(f"\n   File: {INTERAGENT_DIR}/tasks/active/{task.id}.json")
+        print(f"\n   File: {AGENTWEAVE_DIR}/tasks/active/{task.id}.json")
         return 0
         
     except Exception as e:
@@ -736,7 +736,7 @@ def cmd_msg_send(args: argparse.Namespace) -> int:
         print_success(f"Message sent: {message.id}")
         print(f"   To: {args.to}")
         print(f"   Subject: {args.subject or '(no subject)'}")
-        print(f"\n   @{args.to} - Check your inbox: interagent inbox --agent {args.to}")
+        print(f"\n   @{args.to} - Check your inbox: agentweave inbox --agent {args.to}")
         return 0
         
     except Exception as e:
@@ -809,14 +809,14 @@ def cmd_update_template(args: argparse.Namespace) -> int:
     # Resolve template path
     template_path = getattr(args, "template_path", None)
     if not template_path:
-        # Look for AI_CONTEXT.md in cwd (deployed by `interagent init`)
+        # Look for AI_CONTEXT.md in cwd (deployed by `agentweave init`)
         candidate = Path.cwd() / "AI_CONTEXT.md"
         if candidate.exists():
             template_path = str(candidate)
         if not template_path:
             template_path = (
                 "./AI_CONTEXT.md"
-                "  (not found — run `interagent init` first or use --template-path)"
+                "  (not found — run `agentweave init` first or use --template-path)"
             )
 
     focus = getattr(args, "focus", None) or (
@@ -830,7 +830,7 @@ def cmd_update_template(args: argparse.Namespace) -> int:
     try:
         template = get_template("update_prompt")
     except FileNotFoundError:
-        print_error("Template 'update_prompt' not found in src/interagent/templates/")
+        print_error("Template 'update_prompt' not found in src/agentweave/templates/")
         return 1
 
     prompt = (
@@ -853,17 +853,17 @@ def cmd_update_template(args: argparse.Namespace) -> int:
 
 
 def cmd_start(args: argparse.Namespace) -> int:
-    """Launch the InterAgent watchdog as a background daemon.
+    """Launch the AgentWeave watchdog as a background daemon.
 
     Reads all agents from the active session and auto-pings each one when
-    a new message arrives. PID is written to .interagent/watchdog.pid.
+    a new message arrives. PID is written to .agentweave/watchdog.pid.
     """
     import os
     import subprocess as _sp
     from .constants import WATCHDOG_PID_FILE
 
-    if not INTERAGENT_DIR.exists():
-        print_error("No session found. Run: interagent init")
+    if not AGENTWEAVE_DIR.exists():
+        print_error("No session found. Run: agentweave init")
         return 1
 
     # Check if already running
@@ -872,7 +872,7 @@ def cmd_start(args: argparse.Namespace) -> int:
             pid = int(WATCHDOG_PID_FILE.read_text().strip())
             os.kill(pid, 0)  # signal 0 = existence check only
             print_warning(f"Watchdog already running (PID {pid}).")
-            print_info("Run 'interagent stop' first to restart it.")
+            print_info("Run 'agentweave stop' first to restart it.")
             return 1
         except (OSError, ProcessLookupError, ValueError):
             WATCHDOG_PID_FILE.unlink()
@@ -880,7 +880,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     from .constants import WATCHDOG_LOG_FILE
 
     retry_after = getattr(args, "retry_after", None) or 600  # default 10 min
-    cmd = ["interagent-watch", "--auto-ping", "--retry-after", str(retry_after)]
+    cmd = ["agentweave-watch", "--auto-ping", "--retry-after", str(retry_after)]
 
     import os as _os
     spawn_kwargs: dict = (
@@ -894,12 +894,12 @@ def cmd_start(args: argparse.Namespace) -> int:
     WATCHDOG_PID_FILE.write_text(str(proc.pid))
     print_success(f"Watchdog started in background (PID {proc.pid})")
     print_info(f"Logs: {WATCHDOG_LOG_FILE}")
-    print_info("Run 'interagent stop' to stop it.")
+    print_info("Run 'agentweave stop' to stop it.")
     return 0
 
 
 def cmd_stop(_args: argparse.Namespace) -> int:
-    """Stop the background InterAgent watchdog."""
+    """Stop the background AgentWeave watchdog."""
     import os
     from .constants import WATCHDOG_PID_FILE
 
@@ -986,18 +986,18 @@ def cmd_log(args: argparse.Namespace) -> int:
 
 
 def cmd_mcp_setup(_args: argparse.Namespace) -> int:
-    """Configure the InterAgent MCP server for Claude Code and Kimi Code."""
+    """Configure the AgentWeave MCP server for Claude Code and Kimi Code."""
     import os as _os
     import subprocess as _sp
 
-    server_cmd = "interagent-mcp"
+    server_cmd = "agentweave-mcp"
     # On Windows, agent CLIs are .cmd files — shell=True is required for subprocess to find them
     _shell = _os.name == "nt"
 
     results = {}
     for agent_cli, mcp_args in [
-        ("claude", ["claude", "mcp", "add", "interagent", "--", server_cmd]),
-        ("kimi",   ["kimi",   "mcp", "add", "--transport", "stdio", "interagent", "--", server_cmd]),
+        ("claude", ["claude", "mcp", "add", "agentweave", "--", server_cmd]),
+        ("kimi",   ["kimi",   "mcp", "add", "--transport", "stdio", "agentweave", "--", server_cmd]),
     ]:
         try:
             check = _sp.run([agent_cli, "--version"], capture_output=True, shell=_shell)
@@ -1022,7 +1022,7 @@ def cmd_mcp_setup(_args: argparse.Namespace) -> int:
             results[agent_cli] = "not found"
 
     print()
-    print("InterAgent MCP server setup")
+    print("AgentWeave MCP server setup")
     print("-" * 40)
     for agent_cli, status in results.items():
         icon = "[OK]" if status in ("ok", "already configured") else "[!!]"
@@ -1033,15 +1033,15 @@ def cmd_mcp_setup(_args: argparse.Namespace) -> int:
         print("Manual configuration (add to your agent's MCP settings):")
         print()
         print("  Claude Code (.mcp.json or via `claude mcp add`):")
-        print('    claude mcp add interagent -- interagent-mcp')
+        print('    claude mcp add agentweave -- agentweave-mcp')
         print()
         print("  Kimi Code:")
-        print('    kimi mcp add --transport stdio interagent -- interagent-mcp')
+        print('    kimi mcp add --transport stdio agentweave -- agentweave-mcp')
         print()
 
     print("Start the auto-ping watchdog alongside the MCP server:")
-    print("  interagent-watch --auto-ping --agent claude   # in one terminal")
-    print("  interagent-watch --auto-ping --agent kimi     # in another terminal")
+    print("  agentweave-watch --auto-ping --agent claude   # in one terminal")
+    print("  agentweave-watch --auto-ping --agent kimi     # in another terminal")
     print()
     return 0
 
@@ -1061,7 +1061,7 @@ def cmd_transport_setup(args: argparse.Namespace) -> int:
             return 1
 
         remote = args.remote or "origin"
-        branch = args.branch or "interagent/collab"
+        branch = args.branch or "agentweave/collab"
 
         # Check if the collab branch already exists on the remote
         result = _sp.run(
@@ -1076,7 +1076,7 @@ def cmd_transport_setup(args: argparse.Namespace) -> int:
             proc = _sp.run(["git", "mktree"], input=b"", capture_output=True)
             empty_tree = proc.stdout.decode().strip()
             proc = _sp.run(
-                ["git", "commit-tree", empty_tree, "-m", "init: interagent collab branch"],
+                ["git", "commit-tree", empty_tree, "-m", "init: agentweave collab branch"],
                 capture_output=True, text=True,
             )
             commit_sha = proc.stdout.strip()
@@ -1091,8 +1091,8 @@ def cmd_transport_setup(args: argparse.Namespace) -> int:
         else:
             print_info(f"Using existing branch '{branch}' on {remote}")
 
-        # Write .interagent/transport.json
-        INTERAGENT_DIR.mkdir(parents=True, exist_ok=True)
+        # Write .agentweave/transport.json
+        AGENTWEAVE_DIR.mkdir(parents=True, exist_ok=True)
         cluster = getattr(args, "cluster", None) or ""
         config = {
             "type": "git",
@@ -1114,18 +1114,18 @@ def cmd_transport_setup(args: argparse.Namespace) -> int:
         print("Next steps:")
         print(f"  1. Your collaborator clones/has the repo with remote '{remote}'")
         if cluster:
-            print(f"  2. They run: interagent transport setup --type git --cluster <their-name>")
+            print(f"  2. They run: agentweave transport setup --type git --cluster <their-name>")
             print(f"  3. Address messages to them as: <their-cluster>.<their-agent>")
         else:
-            print(f"  2. They run: interagent transport setup --remote {remote} --type git")
+            print(f"  2. They run: agentweave transport setup --remote {remote} --type git")
         print(f"  3. Messages now sync via git branch '{branch}'")
         print()
         print("Start watching for incoming messages:")
-        print("  interagent-watch")
+        print("  agentweave-watch")
         return 0
 
     elif transport_type == "http":
-        print_error("HTTP/MCP transport (InterAgent Hub) is not yet implemented.")
+        print_error("HTTP/MCP transport (AgentWeave Hub) is not yet implemented.")
         print_info("See ROADMAP.md for the planned MCP-based Hub architecture.")
         return 1
 
@@ -1141,9 +1141,9 @@ def cmd_transport_status(_args: argparse.Namespace) -> int:
     config = _load_json(TRANSPORT_CONFIG_FILE)
     if not config:
         print("[TRANSPORT] Type: local (default)")
-        print("   No .interagent/transport.json — using local filesystem")
+        print("   No .agentweave/transport.json — using local filesystem")
         print("   To enable cross-machine sync:")
-        print("     interagent transport setup --type git")
+        print("     agentweave transport setup --type git")
         return 0
 
     transport_type = config.get("type", "local")
@@ -1151,7 +1151,7 @@ def cmd_transport_status(_args: argparse.Namespace) -> int:
 
     if transport_type == "git":
         remote = config.get("remote", "origin")
-        branch = config.get("branch", "interagent/collab")
+        branch = config.get("branch", "agentweave/collab")
         poll_interval = config.get("poll_interval", 10)
         cluster = config.get("cluster", "")
         print(f"   Remote:        {remote}")
@@ -1223,20 +1223,20 @@ def cmd_transport_disable(_args: argparse.Namespace) -> int:
 def create_parser() -> argparse.ArgumentParser:
     """Create argument parser."""
     parser = argparse.ArgumentParser(
-        prog="interagent",
-        description="InterAgent - Multi-agent AI collaboration framework",
+        prog="agentweave",
+        description="AgentWeave - Multi-agent AI collaboration framework",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  interagent init --project "My API" --principal claude --agents claude,kimi,gemini
-  interagent quick --to kimi "Implement authentication"
-  interagent relay --agent kimi
-  interagent summary
-  interagent task list
-  interagent inbox --agent gemini
-  interagent transport setup --type git --cluster alice
+  agentweave init --project "My API" --principal claude --agents claude,kimi,gemini
+  agentweave quick --to kimi "Implement authentication"
+  agentweave relay --agent kimi
+  agentweave summary
+  agentweave task list
+  agentweave inbox --agent gemini
+  agentweave transport setup --type git --cluster alice
 
-For more help: https://github.com/gutohuida/InterAgentFramework
+For more help: https://github.com/gutohuida/AgentWeave
         """,
     )
     
@@ -1499,7 +1499,7 @@ For more help: https://github.com/gutohuida/InterAgentFramework
     mcp_subparsers = mcp_parser.add_subparsers(dest="mcp_command")
     mcp_subparsers.add_parser(
         "setup",
-        help="Configure interagent-mcp in Claude Code and Kimi Code",
+        help="Configure agentweave-mcp in Claude Code and Kimi Code",
     )
 
     # Transport commands
@@ -1526,8 +1526,8 @@ For more help: https://github.com/gutohuida/InterAgentFramework
     )
     transport_setup.add_argument(
         "--branch", "-b",
-        default="interagent/collab",
-        help="Git orphan branch name (default: interagent/collab)",
+        default="agentweave/collab",
+        help="Git orphan branch name (default: agentweave/collab)",
     )
     transport_setup.add_argument(
         "--cluster", "-c",

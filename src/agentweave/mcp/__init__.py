@@ -1,0 +1,1 @@
+"""AgentWeave MCP server package."""

@@ -1,4 +1,4 @@
-# InterAgent Roadmap
+# AgentWeave Roadmap
 
 This document records what has been built and what is planned next.
 Any AI instance working in this repository should read this before proposing
@@ -9,7 +9,7 @@ new features or changes to the transport layer.
 ## What Exists Today (Phase 1 complete)
 
 ### Single-machine collaboration (original)
-Claude Code and Kimi Code collaborate via a shared `.interagent/` directory.
+Claude Code and Kimi Code collaborate via a shared `.agentweave/` directory.
 All state is local: messages in `messages/pending/*.json`, tasks in
 `tasks/active/*.json`. No external dependencies. See README.md for the
 full protocol.
@@ -19,14 +19,14 @@ Cross-machine collaboration is enabled by a pluggable transport layer.
 `MessageBus` and `Watchdog` no longer talk to the filesystem directly —
 they go through a `BaseTransport` interface.
 
-**Transport selection** is automatic, based on `.interagent/transport.json`:
+**Transport selection** is automatic, based on `.agentweave/transport.json`:
 - No file → `LocalTransport` (default, zero behavior change)
 - `"type": "git"` → `GitTransport` (orphan branch, cross-machine)
 - `"type": "http"` → `HttpTransport` stub (not yet implemented)
 
 **Key files:**
 ```
-src/interagent/transport/
+src/agentweave/transport/
   __init__.py    re-exports get_transport(), BaseTransport
   base.py        BaseTransport ABC (6 abstract methods)
   local.py       LocalTransport — wraps existing filesystem behavior
@@ -37,23 +37,23 @@ src/interagent/transport/
 
 **New CLI commands:**
 ```bash
-interagent transport setup --type git [--remote origin] [--branch interagent/collab]
-interagent transport status
-interagent transport pull
-interagent transport disable
+agentweave transport setup --type git [--remote origin] [--branch agentweave/collab]
+agentweave transport status
+agentweave transport pull
+agentweave transport disable
 ```
 
 **New constants** (in `constants.py`):
-- `TRANSPORT_CONFIG_FILE` = `.interagent/transport.json`
-- `GIT_COLLAB_BRANCH` = `"interagent/collab"`
-- `GIT_SEEN_DIR` = `.interagent/.git_seen/` (gitignored)
+- `TRANSPORT_CONFIG_FILE` = `.agentweave/transport.json`
+- `GIT_COLLAB_BRANCH` = `"agentweave/collab"`
+- `GIT_SEEN_DIR` = `.agentweave/.git_seen/` (gitignored)
 
 ---
 
 ## GitTransport — How It Works
 
 Messages and tasks are stored as JSON files on an **orphan branch** named
-`interagent/collab`. The branch shares no history with `main`.
+`agentweave/collab`. The branch shares no history with `main`.
 
 ### Why git plumbing
 All git operations use low-level plumbing commands (`hash-object`, `mktree`,
@@ -81,26 +81,26 @@ never produce the same filename (UUID suffix). On a push conflict (non-fast-forw
 
 ### Seen-set tracking
 To avoid re-delivering messages, seen message IDs are stored locally in
-`.interagent/.git_seen/{agent}-seen.txt`. This file is gitignored (machine-local).
+`.agentweave/.git_seen/{agent}-seen.txt`. This file is gitignored (machine-local).
 `archive_message()` adds to the seen set. The watchdog does NOT add to the
 seen set — it only notifies.
 
 ### Setup (one-time per developer)
 ```bash
 # Developer A (or both):
-interagent transport setup --type git --remote origin
+agentweave transport setup --type git --remote origin
 
 # This:
 # 1. Creates the orphan branch on the remote (if it doesn't exist)
-# 2. Writes .interagent/transport.json
-# 3. Both developers' interagent commands now sync via the branch
+# 2. Writes .agentweave/transport.json
+# 3. Both developers' agentweave commands now sync via the branch
 ```
 
 ---
 
 ## Phase 2 — HttpTransport Implementation (planned)
 
-`src/interagent/transport/http.py` currently raises `NotImplementedError`.
+`src/agentweave/transport/http.py` currently raises `NotImplementedError`.
 When the Hub is built (Phase 3), this stub will be implemented using
 `urllib.request` (stdlib only) to call the Hub's API.
 
@@ -116,7 +116,7 @@ PATCH  {url}/api/v1/tasks/{id}
 
 ---
 
-## Phase 3 — InterAgent Hub (planned, MCP-based)
+## Phase 3 — AgentWeave Hub (planned, MCP-based)
 
 ### What the Hub is
 A hosted (or self-hosted) server where multiple developers connect their AI
@@ -178,15 +178,15 @@ tool: update_task     args: {task_id, status?, note?}
 
 ### New CLI command (Phase 3)
 ```bash
-interagent transport setup --type http \
-  --url https://hub.interagent.dev \
+agentweave transport setup --type http \
+  --url https://hub.agentweave.dev \
   --api-key iaf_live_xxx \
   --project-id proj-abc123
 ```
 
 ### Separate repository
-The Hub lives in a separate repo: `github.com/gutohuida/InterAgentHub`.
-The InterAgentFramework CLI repo only adds `McpTransport` — the Hub
+The Hub lives in a separate repo: `github.com/gutohuida/AgentWeaveHub`.
+The AgentWeaveFramework CLI repo only adds `McpTransport` — the Hub
 is entirely self-contained.
 
 ---
@@ -204,7 +204,7 @@ Next.js dashboard showing:
 
 ## Phase 5 — Official Hosted Hub (planned)
 
-Public hosted instance at `hub.interagent.dev`:
+Public hosted instance at `hub.agentweave.dev`:
 - Supabase (PostgreSQL + Auth + Realtime)
 - FastAPI on Railway or Render
 - Next.js on Vercel
@@ -217,18 +217,18 @@ Public hosted instance at `hub.interagent.dev`:
 ```
 Phase 1 (DONE):   Transport abstraction layer
                    LocalTransport (unchanged), GitTransport (new), HttpTransport (stub)
-                   New CLI: interagent transport setup|status|pull|disable
+                   New CLI: agentweave transport setup|status|pull|disable
 
 Phase 2 (next):   HttpTransport implementation (urllib.request → Hub REST API)
-                   interagent transport setup --type http
+                   agentweave transport setup --type http
 
-Phase 3 (hub):    InterAgentHub v0.1 — FastAPI MCP server + SQLite
+Phase 3 (hub):    AgentWeaveHub v0.1 — FastAPI MCP server + SQLite
                    McpTransport in CLI, MCP tools for send/receive
                    Self-hostable, no UI yet
 
 Phase 4 (hub UI): Next.js dashboard — task board, message threads, agent status
 
-Phase 5 (hosted): hub.interagent.dev — Supabase + Vercel + Railway
+Phase 5 (hosted): hub.agentweave.dev — Supabase + Vercel + Railway
                    Community-hosted option for teams without infra
 ```
 

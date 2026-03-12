@@ -35,7 +35,7 @@ Pay attention to:
 - Commands or flags that reference specific versions or may be outdated
 - Steps describing AI agent behavior that may have changed
 - The multi-agent collaboration sections
-- The InterAgent CLI commands referenced
+- The AgentWeave CLI commands referenced
 - Any tool-specific language that should be generalized or updated
 
 ### 3. Identify Improvements
@@ -44,7 +44,7 @@ Look for opportunities to:
 - Document new capabilities of {agent} (and other common AI coding agents)
 - Remove or update outdated commands, flags, or workflows
 - Improve multi-agent collaboration patterns
-- Reflect new `interagent` CLI commands if applicable
+- Reflect new `agentweave` CLI commands if applicable
 - Update cross-agent prompting techniques based on current best practices
 
 ### 4. Update the Template

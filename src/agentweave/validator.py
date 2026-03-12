@@ -1,4 +1,4 @@
-"""JSON schema validation for InterAgent."""
+"""JSON schema validation for AgentWeave."""
 
 from typing import Any, Dict, List, Tuple
 from .constants import TASK_STATUSES, MESSAGE_TYPES, PRIORITIES, AGENT_NAME_RE

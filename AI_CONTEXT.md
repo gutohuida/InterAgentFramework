@@ -1,8 +1,8 @@
-<!-- InterAgent AI Context v0.1.2 â€” run `interagent update-template` to update -->
+<!-- AgentWeave AI Context v0.1.2 â€” run `agentweave update-template` to update -->
 # AI Workflow Context
 
-> This file is deployed by `interagent init` and versioned with the package.
-> Run `interagent update-template --agent claude` to generate a prompt that
+> This file is deployed by `agentweave init` and versioned with the package.
+> Run `agentweave update-template --agent claude` to generate a prompt that
 > keeps this file current with new AI capabilities and best practices.
 
 ---
@@ -87,16 +87,16 @@ If an agent exists and is relevant, using it is not optional.
 
 ---
 
-## Multi-Agent Workflow (InterAgent)
+## Multi-Agent Workflow (AgentWeave)
 
-If `.interagent/session.json` exists, you are in multi-agent mode.
+If `.agentweave/session.json` exists, you are in multi-agent mode.
 
 **On every session start:**
-1. Read `.interagent/AGENTS.md` â€” collaboration guide and full command reference
-2. Read `.interagent/shared/context.md` â€” current project state and your task
-3. Run `interagent status` to see pending work (via Bash â€” do not ask user to run it)
+1. Read `.agentweave/AGENTS.md` â€” collaboration guide and full command reference
+2. Read `.agentweave/shared/context.md` â€” current project state and your task
+3. Run `agentweave status` to see pending work (via Bash â€” do not ask user to run it)
 
-**Rule: run all `interagent` CLI commands via Bash automatically.**
+**Rule: run all `agentweave` CLI commands via Bash automatically.**
 Never ask the user to run CLI commands. They only paste relay prompts.
 
 ### When You Are Principal
@@ -109,8 +109,8 @@ Never ask the user to run CLI commands. They only paste relay prompts.
 ### Delegating to Kimi
 
 ```bash
-interagent quick --to kimi "[task description]"
-interagent relay --agent kimi
+agentweave quick --to kimi "[task description]"
+agentweave relay --agent kimi
 ```
 
 Show the relay prompt output to the user to paste into Kimi Code.
@@ -118,19 +118,19 @@ Show the relay prompt output to the user to paste into Kimi Code.
 ### When User Says "Kimi Is Done"
 
 ```bash
-interagent inbox --agent claude
-interagent summary
+agentweave inbox --agent claude
+agentweave summary
 ```
 
 Review Kimi's work and continue without user input.
 
 ### Cross-Agent Sub-Agent Requests
 
-Write `.interagent/shared/agent-request-[topic].md`, then tell user:
-"Tell Kimi to check `.interagent/shared/` for a new request from Claude"
+Write `.agentweave/shared/agent-request-[topic].md`, then tell user:
+"Tell Kimi to check `.agentweave/shared/` for a new request from Claude"
 
 ---
 
 ## When Compacting
 
-[Replace with: current phase, modified files, failing tests, active InterAgent task IDs]
+[Replace with: current phase, modified files, failing tests, active AgentWeave task IDs]

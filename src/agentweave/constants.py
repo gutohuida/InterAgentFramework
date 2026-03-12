@@ -1,14 +1,14 @@
-"""Constants for the InterAgent framework."""
+"""Constants for the AgentWeave framework."""
 
 import re
 from pathlib import Path
 
 # Directory structure
-INTERAGENT_DIR = Path(".interagent")
-AGENTS_DIR = INTERAGENT_DIR / "agents"
-TASKS_DIR = INTERAGENT_DIR / "tasks"
-MESSAGES_DIR = INTERAGENT_DIR / "messages"
-SHARED_DIR = INTERAGENT_DIR / "shared"
+AGENTWEAVE_DIR = Path(".agentweave")
+AGENTS_DIR = AGENTWEAVE_DIR / "agents"
+TASKS_DIR = AGENTWEAVE_DIR / "tasks"
+MESSAGES_DIR = AGENTWEAVE_DIR / "messages"
+SHARED_DIR = AGENTWEAVE_DIR / "shared"
 
 # Task directories
 TASKS_ACTIVE_DIR = TASKS_DIR / "active"
@@ -19,19 +19,19 @@ MESSAGES_PENDING_DIR = MESSAGES_DIR / "pending"
 MESSAGES_ARCHIVE_DIR = MESSAGES_DIR / "archive"
 
 # File paths
-SESSION_FILE = INTERAGENT_DIR / "session.json"
-WATCHDOG_PID_FILE = INTERAGENT_DIR / "watchdog.pid"        # gitignored, machine-local
-WATCHDOG_LOG_FILE = INTERAGENT_DIR / "watchdog.log"        # gitignored, machine-local
-WATCHDOG_HEARTBEAT_FILE = INTERAGENT_DIR / "watchdog.heartbeat"  # gitignored
+SESSION_FILE = AGENTWEAVE_DIR / "session.json"
+WATCHDOG_PID_FILE = AGENTWEAVE_DIR / "watchdog.pid"        # gitignored, machine-local
+WATCHDOG_LOG_FILE = AGENTWEAVE_DIR / "watchdog.log"        # gitignored, machine-local
+WATCHDOG_HEARTBEAT_FILE = AGENTWEAVE_DIR / "watchdog.heartbeat"  # gitignored
 
 # Event log
-LOGS_DIR = INTERAGENT_DIR / "logs"
+LOGS_DIR = AGENTWEAVE_DIR / "logs"
 EVENTS_LOG_FILE = LOGS_DIR / "events.jsonl"                # gitignored, machine-local
 
 # Transport
-TRANSPORT_CONFIG_FILE = INTERAGENT_DIR / "transport.json"
-GIT_COLLAB_BRANCH = "interagent/collab"
-GIT_SEEN_DIR = INTERAGENT_DIR / ".git_seen"  # local seen-set for git transport (gitignored)
+TRANSPORT_CONFIG_FILE = AGENTWEAVE_DIR / "transport.json"
+GIT_COLLAB_BRANCH = "agentweave/collab"
+GIT_SEEN_DIR = AGENTWEAVE_DIR / ".git_seen"  # local seen-set for git transport (gitignored)
 
 # Agent name validation: alphanumeric / hyphen / underscore, 1-32 chars.
 # Replaces the old hardcoded two-item list — any name matching this is accepted.

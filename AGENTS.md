@@ -1,12 +1,12 @@
-# InterAgent Framework - Agent Guide
+# AgentWeave Framework - Agent Guide
 
-> This file provides essential information for AI coding agents working on the InterAgent Framework codebase.
+> This file provides essential information for AI coding agents working on the AgentWeave Framework codebase.
 
 ## Project Overview
 
-**InterAgent** is a multi-agent AI collaboration framework that enables multiple AI agents (Claude, Kimi, Gemini, Codex, etc.) to work together on the same project. Agents communicate through:
+**AgentWeave** is a multi-agent AI collaboration framework that enables multiple AI agents (Claude, Kimi, Gemini, Codex, etc.) to work together on the same project. Agents communicate through:
 
-1. **A shared `.interagent/` directory** (filesystem-based protocol)
+1. **A shared `.agentweave/` directory** (filesystem-based protocol)
 2. **A local MCP server** (for native tool integration)
 
 The framework supports two modes:
@@ -28,8 +28,8 @@ The framework supports two modes:
 ## Project Structure
 
 ```
-InterAgentFramework/
-├── src/interagent/              # Main source code
+AgentWeaveFramework/
+├── src/agentweave/              # Main source code
 │   ├── __init__.py              # Package exports
 │   ├── cli.py                   # CLI commands (argparse) - main entry point
 │   ├── session.py               # Session lifecycle management
@@ -107,20 +107,20 @@ pytest --cov
 
 ```bash
 # Verify installation
-interagent --help
-iaf --help                    # alias
-interagent-watch --help       # watchdog
-interagent-mcp                # MCP server (stdio)
+agentweave --help
+aw --help                    # alias
+agentweave-watch --help       # watchdog
+agentweave-mcp                # MCP server (stdio)
 ```
 
 ## Key Architectural Concepts
 
 ### 1. Session Management
 
-Sessions are stored in `.interagent/session.json`:
+Sessions are stored in `.agentweave/session.json`:
 
 ```python
-from interagent import Session
+from agentweave import Session
 
 session = Session.create(
     name="My Project",
@@ -148,7 +148,7 @@ pending → assigned → in_progress → completed → under_review → approved
 
 Task operations:
 ```python
-from interagent import Task
+from agentweave import Task
 
 task = Task.create(
     title="Implement feature",
@@ -167,7 +167,7 @@ task.move_to_completed()  # When approved/completed
 Messages are routed through the transport layer:
 
 ```python
-from interagent import Message, MessageBus
+from agentweave import Message, MessageBus
 
 msg = Message.create(
     sender="claude",
@@ -191,16 +191,16 @@ The transport layer abstracts message/task I/O:
 |-----------|------|----------|
 | `LocalTransport` | local | Single-machine collaboration |
 | `GitTransport` | git | Cross-machine via orphan branch |
-| `HttpTransport` | http | InterAgent Hub (planned) |
+| `HttpTransport` | http | AgentWeave Hub (planned) |
 
-Transport selection is automatic based on `.interagent/transport.json`.
+Transport selection is automatic based on `.agentweave/transport.json`.
 
 ### 5. File Locking
 
 All task file operations that modify state must use locking:
 
 ```python
-from interagent.locking import lock
+from agentweave.locking import lock
 
 with lock("task-abc123"):
     task = Task.load("task-abc123")
@@ -215,7 +215,7 @@ Locks have a 5-minute automatic timeout to prevent deadlocks.
 All saves must pass through validator functions:
 
 ```python
-from interagent.validator import validate_task, sanitize_task_data
+from agentweave.validator import validate_task, sanitize_task_data
 
 is_valid, errors = validate_task(task_data)
 if is_valid:
@@ -330,7 +330,7 @@ python -m twine upload dist/*
 
 Version is defined in:
 - `pyproject.toml` (`[project]` section)
-- `src/interagent/__init__.py` (`__version__`)
+- `src/agentweave/__init__.py` (`__version__`)
 
 Keep these in sync when bumping versions.
 
@@ -340,10 +340,10 @@ Defined in `pyproject.toml` `[project.scripts]`:
 
 | Command | Entry Point | Purpose |
 |---------|-------------|---------|
-| `interagent` | `interagent.cli:main` | Main CLI |
-| `iaf` | `interagent.cli:main` | CLI alias |
-| `interagent-watch` | `interagent.watchdog:main` | File watchdog |
-| `interagent-mcp` | `interagent.mcp.server:main` | MCP server |
+| `agentweave` | `agentweave.cli:main` | Main CLI |
+| `aw` | `agentweave.cli:main` | CLI alias |
+| `agentweave-watch` | `agentweave.watchdog:main` | File watchdog |
+| `agentweave-mcp` | `agentweave.mcp.server:main` | MCP server |
 
 ## Adding New Features
 
@@ -369,24 +369,24 @@ Defined in `pyproject.toml` `[project.scripts]`:
 
 The following are gitignored and should never be committed:
 
-- `.interagent/tasks/*/` - Task state files
-- `.interagent/messages/*/` - Message state files
-- `.interagent/agents/*.json` - Agent status
-- `.interagent/session.json` - Session config
-- `.interagent/transport.json` - Transport config (may contain secrets)
-- `.interagent/.git_seen/` - Git transport seen-set
-- `.interagent/watchdog.pid` - Watchdog PID
-- `.interagent/watchdog.log` - Watchdog logs
+- `.agentweave/tasks/*/` - Task state files
+- `.agentweave/messages/*/` - Message state files
+- `.agentweave/agents/*.json` - Agent status
+- `.agentweave/session.json` - Session config
+- `.agentweave/transport.json` - Transport config (may contain secrets)
+- `.agentweave/.git_seen/` - Git transport seen-set
+- `.agentweave/watchdog.pid` - Watchdog PID
+- `.agentweave/watchdog.log` - Watchdog logs
 - `kimichanges.md`, `kimiwork.md` - Working files
 
 **Safe to commit**:
-- `.interagent/README.md`
-- `.interagent/AGENTS.md`
-- `.interagent/ROLES.md`
+- `.agentweave/README.md`
+- `.agentweave/AGENTS.md`
+- `.agentweave/ROLES.md`
 
 ## Resources
 
-- **GitHub**: https://github.com/gutohuida/InterAgentFramework
-- **PyPI**: https://pypi.org/project/interagent-framework/
-- **Issues**: https://github.com/gutohuida/InterAgentFramework/issues
+- **GitHub**: https://github.com/gutohuida/AgentWeaveFramework
+- **PyPI**: https://pypi.org/project/agentweave-ai/
+- **Issues**: https://github.com/gutohuida/AgentWeaveFramework/issues
 - **Roadmap**: `ROADMAP.md` in repository root

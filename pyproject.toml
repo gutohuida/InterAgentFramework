@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "interagent-framework"
-version = "0.3.0"
+name = "agentweave-ai"
+version = "0.4.0"
 description = "Multi-agent AI collaboration framework (Claude, Kimi, Gemini, Codex, and more)"
 readme = "README.md"
 license = "MIT"
@@ -40,23 +40,23 @@ dev = [
 all = ["fastmcp>=2.0"]
 
 [project.urls]
-Homepage = "https://github.com/gutohuida/InterAgentFramework"
-Documentation = "https://github.com/gutohuida/InterAgentFramework#readme"
-Repository = "https://github.com/gutohuida/InterAgentFramework"
-Issues = "https://github.com/gutohuida/InterAgentFramework/issues"
-Changelog = "https://github.com/gutohuida/InterAgentFramework/blob/master/CHANGELOG.md"
+Homepage = "https://github.com/gutohuida/AgentWeave"
+Documentation = "https://github.com/gutohuida/AgentWeave#readme"
+Repository = "https://github.com/gutohuida/AgentWeave"
+Issues = "https://github.com/gutohuida/AgentWeave/issues"
+Changelog = "https://github.com/gutohuida/AgentWeave/blob/master/CHANGELOG.md"
 
 [project.scripts]
-interagent = "interagent.cli:main"
-iaf = "interagent.cli:main"
-interagent-watch = "interagent.watchdog:main"
-interagent-mcp = "interagent.mcp.server:main"
+agentweave = "agentweave.cli:main"
+aw = "agentweave.cli:main"
+agentweave-watch = "agentweave.watchdog:main"
+agentweave-mcp = "agentweave.mcp.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-interagent = ["templates/*"]
+agentweave = ["templates/*"]
 
 [tool.black]
 line-length = 100

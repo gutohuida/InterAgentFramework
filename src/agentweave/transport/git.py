@@ -1,7 +1,7 @@
 """Git orphan-branch transport for cross-machine collaboration.
 
 Messages and tasks are stored as JSON files on an orphan branch
-(default: interagent/collab). All git operations use plumbing commands
+(default: agentweave/collab). All git operations use plumbing commands
 (hash-object, mktree, commit-tree, push) — the working tree and HEAD
 are never touched.
 
@@ -16,7 +16,7 @@ With cluster (multi-person on same branch):
     e.g.    20260309T142301Z-alice.claude-bob.kimi-a3f2c1.json
 
   The cluster name identifies a developer's workspace (set via
-  `interagent transport setup --type git --cluster alice`).
+  `agentweave transport setup --type git --cluster alice`).
   Recipients use cluster.agent addressing to reach specific clusters.
 
 Tasks:    {iso_ts}-task-for-{assignee}-{uuid6}.json
@@ -31,7 +31,7 @@ filename-only operation — no file reads needed for inbox filtering.
 Seen-set tracking
 -----------------
 To avoid re-delivering already-seen messages, seen message IDs are stored
-in .interagent/.git_seen/{agent}-seen.txt (one ID per line). This file
+in .agentweave/.git_seen/{agent}-seen.txt (one ID per line). This file
 is local-only and gitignored. archive_message() adds to the seen set.
 """
 
@@ -70,7 +70,7 @@ class GitTransport(BaseTransport):
     def __init__(
         self,
         remote: str = "origin",
-        branch: str = "interagent/collab",
+        branch: str = "agentweave/collab",
         poll_interval: int = 10,
         cluster: str = "",
     ):
@@ -156,7 +156,7 @@ class GitTransport(BaseTransport):
                 )
             else:
                 rc, commit_sha, _ = _run_git(
-                    ["commit-tree", new_tree, "-m", "init: interagent collab branch"]
+                    ["commit-tree", new_tree, "-m", "init: agentweave collab branch"]
                 )
             if rc != 0:
                 return False
@@ -286,7 +286,7 @@ class GitTransport(BaseTransport):
         """Mark a message as read by adding its ID to the local seen set.
 
         Git transport messages are immutable on the branch (append-only).
-        Archiving is tracked locally in .interagent/.git_seen/.
+        Archiving is tracked locally in .agentweave/.git_seen/.
         """
         # Find which agent this message belongs to
         self._fetch()

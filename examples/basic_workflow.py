@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Example: Basic InterAgent Workflow
+Example: Basic AgentWeave Workflow
 
 This example demonstrates the basic workflow of:
 1. Initializing a session
@@ -9,12 +9,12 @@ This example demonstrates the basic workflow of:
 4. Updating task status
 """
 
-from interagent import Session, Task, Message, MessageBus
+from agentweave import Session, Task, Message, MessageBus
 
 
 def main():
     print("=" * 60)
-    print("InterAgent Basic Workflow Example")
+    print("AgentWeave Basic Workflow Example")
     print("=" * 60)
     print()
 
@@ -260,7 +260,7 @@ Thanks!
         print(f"  [{task.status:12}] {task.title}")
     print()
     
-    print("Check .interagent/ directory for files created!")
+    print("Check .agentweave/ directory for files created!")
 
 
 if __name__ == "__main__":

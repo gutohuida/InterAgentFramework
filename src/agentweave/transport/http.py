@@ -1,7 +1,7 @@
-"""HTTP/MCP transport stub — interface contract for the InterAgent Hub.
+"""HTTP/MCP transport stub — interface contract for the AgentWeave Hub.
 
 This module defines the HttpTransport class but does NOT implement it yet.
-It exists to specify the API contract that the InterAgent Hub must satisfy,
+It exists to specify the API contract that the AgentWeave Hub must satisfy,
 allowing the CLI and Hub to be developed independently.
 
 When the Hub is built (Phase 3 in ROADMAP.md), this stub will be replaced
@@ -13,7 +13,7 @@ See ROADMAP.md for the full Hub architecture and phasing plan.
 Expected transport.json for HTTP/MCP mode:
     {
         "type": "http",
-        "url": "https://hub.interagent.dev",
+        "url": "https://hub.agentweave.dev",
         "api_key": "iaf_live_xxxxxxxxxxxx",
         "project_id": "proj-abc123"
     }
@@ -35,7 +35,7 @@ from .base import BaseTransport
 
 
 class HttpTransport(BaseTransport):
-    """Transport that delegates to an InterAgent Hub via HTTP/MCP.
+    """Transport that delegates to an AgentWeave Hub via HTTP/MCP.
 
     NOT YET IMPLEMENTED. All methods raise NotImplementedError.
     This class is a placeholder that defines the interface the Hub must satisfy.
@@ -49,8 +49,8 @@ class HttpTransport(BaseTransport):
     def _not_implemented(self) -> None:
         raise NotImplementedError(
             "HTTP/MCP transport is not yet implemented. "
-            "See ROADMAP.md for the InterAgent Hub plan. "
-            "Use 'interagent transport disable' to revert to local transport."
+            "See ROADMAP.md for the AgentWeave Hub plan. "
+            "Use 'agentweave transport disable' to revert to local transport."
         )
 
     def send_message(self, message_data: Dict[str, Any]) -> bool:

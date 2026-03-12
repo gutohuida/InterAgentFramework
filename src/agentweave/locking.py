@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Optional
 from contextlib import contextmanager
 
-from .constants import INTERAGENT_DIR
+from .constants import AGENTWEAVE_DIR
 
-LOCK_DIR = INTERAGENT_DIR / ".locks"
+LOCK_DIR = AGENTWEAVE_DIR / ".locks"
 DEFAULT_TIMEOUT = 30  # seconds
 DEFAULT_RETRY_DELAY = 0.1  # seconds
 

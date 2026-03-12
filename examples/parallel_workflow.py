@@ -6,12 +6,12 @@ This example demonstrates Claude and Kimi working in parallel
 to build different parts of a system simultaneously.
 """
 
-from interagent import Session, Task, Message, MessageBus
+from agentweave import Session, Task, Message, MessageBus
 
 
 def main():
     print("=" * 60)
-    print("InterAgent Parallel Workflow Example")
+    print("AgentWeave Parallel Workflow Example")
     print("=" * 60)
     print()
     print("Scenario: Building a web app with parallel frontend and backend work")

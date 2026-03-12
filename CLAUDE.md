@@ -3,13 +3,13 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-File-based collaboration protocol enabling Claude Code and Kimi Code to work together through a shared `.interagent/` directory. Zero external dependencies — pure Python stdlib. Supports single-machine (local) and cross-machine (git orphan branch) collaboration. An MCP-based Hub for multi-team use is planned — see ROADMAP.md.
+File-based collaboration protocol enabling Claude Code and Kimi Code to work together through a shared `.agentweave/` directory. Zero external dependencies — pure Python stdlib. Supports single-machine (local) and cross-machine (git orphan branch) collaboration. An MCP-based Hub for multi-team use is planned — see ROADMAP.md.
 
 ## Tech Stack
 - Python 3.8+, no external runtime dependencies
 - Package manager: pip (editable install: `pip install -e .`)
-- Entry points: `interagent`, `iaf` → `interagent.cli:main`
-- Watchdog entry point: `interagent-watch` → `interagent.watchdog:main`
+- Entry points: `agentweave`, `aw` → `agentweave.cli:main`
+- Watchdog entry point: `agentweave-watch` → `agentweave.watchdog:main`
 
 ## Essential Commands
 
@@ -19,32 +19,32 @@ pip install -e .                              # runtime only
 pip install -e ".[dev]"                       # include pytest, black, ruff, mypy
 
 # Verify
-interagent --help
+agentweave --help
 
 # Session lifecycle
-interagent init --project "Name" --principal claude
-interagent status
-interagent summary
+agentweave init --project "Name" --principal claude
+agentweave status
+agentweave summary
 
 # Delegation workflow
-interagent quick --to kimi "task description"
-interagent relay --agent kimi                 # NOTE: flag is --agent, not --to
-interagent inbox --agent claude
+agentweave quick --to kimi "task description"
+agentweave relay --agent kimi                 # NOTE: flag is --agent, not --to
+agentweave inbox --agent claude
 
 # Tasks
-interagent task list
-interagent task show <task_id>
-interagent task update <task_id> --status in_progress
-interagent task update <task_id> --status completed
+agentweave task list
+agentweave task show <task_id>
+agentweave task update <task_id> --status in_progress
+agentweave task update <task_id> --status completed
 
 # Cross-machine transport (git)
-interagent transport setup --type git         # one-time setup per developer
-interagent transport status                   # show active transport
-interagent transport pull                     # force immediate fetch
-interagent transport disable                  # revert to local filesystem
+agentweave transport setup --type git         # one-time setup per developer
+agentweave transport status                   # show active transport
+agentweave transport pull                     # force immediate fetch
+agentweave transport disable                  # revert to local filesystem
 
 # Template maintenance
-interagent update-template --agent claude --template-path ~/Documents/projects/template.txt
+agentweave update-template --agent claude --template-path ~/Documents/projects/template.txt
 ```
 
 ## Dev / Quality Commands
@@ -64,7 +64,7 @@ pytest
 ## Architecture
 
 ```
-src/interagent/
+src/agentweave/
   cli.py          All CLI commands (argparse). To add a command: add cmd_*, add subparser in
                   create_parser(), add routing branch in main()
   session.py      Session lifecycle (create, load, save, add_task, complete_task)
@@ -79,9 +79,9 @@ src/interagent/
                   templates/__init__.py — templates are .md files in that directory
   transport/      Pluggable transport layer (see below)
 
-.interagent/      Runtime state — gitignored except README.md and AGENTS.md
-AI_CONTEXT.md     Versioned best-practices template created by `interagent init` at project
-                  root; basis for generating CLAUDE.md via `interagent update-template`
+.agentweave/      Runtime state — gitignored except README.md and AGENTS.md
+AI_CONTEXT.md     Versioned best-practices template created by `agentweave init` at project
+                  root; basis for generating CLAUDE.md via `agentweave update-template`
 ROADMAP.md        Full architecture plan: transport layer, git transport, planned Hub (MCP)
 ```
 
@@ -91,17 +91,17 @@ All message and task I/O goes through `BaseTransport`. Selection is automatic:
 
 ```
 No transport.json  →  LocalTransport   (default, unchanged single-machine behavior)
-type: "git"        →  GitTransport     (orphan branch interagent/collab, cross-machine)
-type: "http"       →  HttpTransport    (InterAgent Hub — not yet implemented, see ROADMAP.md)
+type: "git"        →  GitTransport     (orphan branch agentweave/collab, cross-machine)
+type: "http"       →  HttpTransport    (AgentWeave Hub — not yet implemented, see ROADMAP.md)
 ```
 
 ```
-src/interagent/transport/
+src/agentweave/transport/
   base.py     BaseTransport ABC — 6 abstract methods all transports must implement
-  local.py    LocalTransport — wraps existing .interagent/ filesystem behavior
+  local.py    LocalTransport — wraps existing .agentweave/ filesystem behavior
   git.py      GitTransport — git plumbing only (hash-object, mktree, commit-tree, push)
   http.py     HttpTransport stub — defines Hub API contract, raises NotImplementedError
-  config.py   get_transport() factory — reads .interagent/transport.json
+  config.py   get_transport() factory — reads .agentweave/transport.json
   __init__.py re-exports get_transport(), BaseTransport, all transport classes
 ```
 
@@ -109,7 +109,7 @@ src/interagent/transport/
 - Uses only git plumbing — never touches working tree or HEAD
 - Files on the branch are append-only; UUID suffix prevents conflicts between concurrent pushes
 - Message filename: `{iso_ts}-{from}-{to}-{uuid6}.json` (recipient encoded in name)
-- Seen-set in `.interagent/.git_seen/{agent}-seen.txt` tracks archived message IDs (gitignored)
+- Seen-set in `.agentweave/.git_seen/{agent}-seen.txt` tracks archived message IDs (gitignored)
 - Watchdog for git transport tracks known remote filenames in memory (does NOT add to seen set)
 
 **Adding a new transport:** Create a class in `transport/` that extends `BaseTransport`,
@@ -134,11 +134,11 @@ Valid statuses (from `constants.py`): `pending`, `assigned`, `in_progress`, `com
 - ALL task file operations that modify state must use `locking.py` context manager (`with lock("name"):`)
 - Templates use `get_template("name")` from `templates/__init__.py` — never hardcode template strings in `cli.py`
 - `is_locked()` is read-only — it must never delete files (only `acquire_lock()` cleans stale locks)
-- NEVER commit `.interagent/tasks/`, `messages/`, `agents/`, `session.json` (already gitignored)
-- NEVER commit `.interagent/transport.json` or `.interagent/.git_seen/` (gitignored, machine-local)
+- NEVER commit `.agentweave/tasks/`, `messages/`, `agents/`, `session.json` (already gitignored)
+- NEVER commit `.agentweave/transport.json` or `.agentweave/.git_seen/` (gitignored, machine-local)
 - `kimichanges.md` and `kimiwork.md` are gitignored working files — never commit them
 - The `relay` subcommand flag is `--agent`, not `--to` — never write `relay --to`
 
 ## When Compacting
 
-Keep in context: current task IDs being worked on, session mode, which agent is principal, active transport type, any pending messages in `.interagent/messages/pending/`, which CLI command is being added/modified.
+Keep in context: current task IDs being worked on, session mode, which agent is principal, active transport type, any pending messages in `.agentweave/messages/pending/`, which CLI command is being added/modified.

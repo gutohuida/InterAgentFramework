@@ -1,11 +1,11 @@
-<!-- InterAgent AI Context v0.2.0 — run `interagent update-template` to update -->
+<!-- AgentWeave AI Context v0.2.0 — run `agentweave update-template` to update -->
 # AI Workflow Context
 
 > **Purpose:** This file defines the project's DNA — what it is, how it's built, and how to work with it.
 >
 > **Update frequency:** Monthly, or when the tech stack changes.
 >
-> **For current work:** See `.interagent/shared/context.md` for today's focus and recent decisions.
+> **For current work:** See `.agentweave/shared/context.md` for today's focus and recent decisions.
 
 ---
 
@@ -57,16 +57,16 @@
 
 ## Multi-Agent Collaboration
 
-If `.interagent/session.json` exists, you are in multi-agent mode.
+If `.agentweave/session.json` exists, you are in multi-agent mode.
 
 **On every session start:**
 1. **Read this file** (`AI_CONTEXT.md`) — understand the project
-2. **Read `.interagent/AGENTS.md`** — learn the collaboration protocol
-3. **Read `.interagent/ROLES.md`** — see who's responsible for what
-4. **Read `.interagent/shared/context.md`** — see current focus and recent decisions
-5. Run `interagent status` to see pending work
+2. **Read `.agentweave/AGENTS.md`** — learn the collaboration protocol
+3. **Read `.agentweave/ROLES.md`** — see who's responsible for what
+4. **Read `.agentweave/shared/context.md`** — see current focus and recent decisions
+5. Run `agentweave status` to see pending work
 
-**Rule: run all `interagent` CLI commands via Bash automatically.**
+**Rule: run all `agentweave` CLI commands via Bash automatically.**
 Never ask the user to run CLI commands. They only paste relay prompts.
 
 ---
@@ -97,4 +97,4 @@ with severity: CRITICAL / HIGH / MEDIUM / INFO.
 
 ## When Compacting
 
-[Replace with: current phase, modified files, failing tests, active InterAgent task IDs]
+[Replace with: current phase, modified files, failing tests, active AgentWeave task IDs]

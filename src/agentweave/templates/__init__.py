@@ -1,4 +1,4 @@
-"""Templates for InterAgent.
+"""Templates for AgentWeave.
 
 This module contains markdown templates for common collaboration scenarios.
 """

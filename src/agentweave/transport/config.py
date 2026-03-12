@@ -1,4 +1,4 @@
-"""Transport factory — reads .interagent/transport.json and returns the active transport."""
+"""Transport factory — reads .agentweave/transport.json and returns the active transport."""
 
 from .base import BaseTransport
 from ..constants import TRANSPORT_CONFIG_FILE
@@ -8,11 +8,11 @@ from ..utils import load_json
 def get_transport() -> BaseTransport:
     """Return the configured transport, defaulting to LocalTransport.
 
-    If .interagent/transport.json does not exist, LocalTransport is returned,
+    If .agentweave/transport.json does not exist, LocalTransport is returned,
     preserving 100% of existing single-machine behavior.
 
     transport.json shape:
-        {"type": "git", "remote": "origin", "branch": "interagent/collab",
+        {"type": "git", "remote": "origin", "branch": "agentweave/collab",
          "poll_interval": 10, "cluster": "alice"}
         {"type": "http", "url": "https://...", "api_key": "iaf_live_xxx", "project_id": "proj-abc"}
 
@@ -31,7 +31,7 @@ def get_transport() -> BaseTransport:
         from .git import GitTransport
         return GitTransport(
             remote=config.get("remote", "origin"),
-            branch=config.get("branch", "interagent/collab"),
+            branch=config.get("branch", "agentweave/collab"),
             poll_interval=int(config.get("poll_interval", 10)),
             cluster=config.get("cluster", ""),
         )

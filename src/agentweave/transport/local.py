@@ -1,4 +1,4 @@
-"""Local filesystem transport — wraps the existing .interagent/ behavior."""
+"""Local filesystem transport — wraps the existing .agentweave/ behavior."""
 
 from typing import Any, Dict, List, Optional
 
@@ -12,7 +12,7 @@ from ..utils import load_json, save_json, now_iso
 
 
 class LocalTransport(BaseTransport):
-    """Transport backed by the local .interagent/ filesystem.
+    """Transport backed by the local .agentweave/ filesystem.
 
     This is the default transport when no transport.json is present.
     Behavior is identical to what MessageBus did before the transport layer

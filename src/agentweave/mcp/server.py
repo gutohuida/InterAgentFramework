@@ -1,17 +1,17 @@
-"""InterAgent MCP server.
+"""AgentWeave MCP server.
 
-Exposes InterAgent messaging and task management as MCP tools so that
+Exposes AgentWeave messaging and task management as MCP tools so that
 Claude Code and Kimi Code can send/receive messages and update tasks
 natively, without manual relay prompts.
 
 Usage:
-    interagent-mcp                         # stdio (default)
+    agentweave-mcp                         # stdio (default)
 
 Configure in Claude Code:
-    claude mcp add interagent -- interagent-mcp
+    claude mcp add agentweave -- agentweave-mcp
 
 Configure in Kimi Code:
-    kimi mcp add --transport stdio interagent -- interagent-mcp
+    kimi mcp add --transport stdio agentweave -- agentweave-mcp
 """
 
 from typing import Any, Dict, List, Optional
@@ -21,7 +21,7 @@ try:
 except ImportError as e:
     raise ImportError(
         "fastmcp is required for the MCP server. "
-        "Install it with: pip install 'interagent-framework[mcp]'"
+        "Install it with: pip install 'agentweave-ai[mcp]'"
     ) from e
 
 from ..constants import MESSAGE_TYPES, PRIORITIES, TASK_STATUSES
@@ -31,9 +31,9 @@ from ..task import Task
 from ..transport import get_transport
 
 mcp = FastMCP(
-    name="interagent",
+    name="agentweave",
     instructions=(
-        "InterAgent collaboration tools. Use these to communicate with other AI agents "
+        "AgentWeave collaboration tools. Use these to communicate with other AI agents "
         "and manage shared tasks. Always mark messages as read after processing them."
     ),
 )
@@ -233,7 +233,7 @@ def create_task(
 
 @mcp.tool()
 def get_status() -> Dict[str, Any]:
-    """Get a summary of the current InterAgent session and active tasks.
+    """Get a summary of the current AgentWeave session and active tasks.
 
     Returns:
         Dict with session info and task counts by status and assignee.
@@ -270,7 +270,7 @@ def get_status() -> Dict[str, Any]:
 
 
 def main() -> None:
-    """Run the InterAgent MCP server (stdio transport)."""
+    """Run the AgentWeave MCP server (stdio transport)."""
     mcp.run()
 
 

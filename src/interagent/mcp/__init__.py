@@ -1,1 +1,0 @@
-"""InterAgent MCP server package."""

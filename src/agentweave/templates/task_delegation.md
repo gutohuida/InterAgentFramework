@@ -56,14 +56,14 @@ Use the following to update status:
 
 ```bash
 # Start work
-interagent task update {{ task_id }} --status in_progress
+agentweave task update {{ task_id }} --status in_progress
 
 # Add note
-interagent task update {{ task_id }} --note "Making progress..."
+agentweave task update {{ task_id }} --note "Making progress..."
 
 # Complete
-interagent task update {{ task_id }} --status completed
+agentweave task update {{ task_id }} --status completed
 
 # Request review
-interagent msg send --to {{ sender }} --subject "Review Request" --message "Task complete!"
+agentweave msg send --to {{ sender }} --subject "Review Request" --message "Task complete!"
 ```

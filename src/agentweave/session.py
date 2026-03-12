@@ -1,4 +1,4 @@
-"""Session management for InterAgent."""
+"""Session management for AgentWeave."""
 
 from typing import Any, Dict, List, Optional
 

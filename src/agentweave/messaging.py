@@ -1,4 +1,4 @@
-"""Messaging system for InterAgent."""
+"""Messaging system for AgentWeave."""
 
 from typing import Any, Dict, List, Optional
 
