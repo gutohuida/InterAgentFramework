@@ -12,12 +12,12 @@ import { useSSE } from '@/hooks/useSSE'
 type Page = 'messages' | 'tasks' | 'questions' | 'activity'
 
 export default function App() {
-  const { isConfigured } = useConfigStore()
+  const { isConfigured, _hasHydrated } = useConfigStore()
   const [forceOpen, setForceOpen] = useState(false)
   const [page, setPage] = useState<Page>('messages')
 
-  // Show modal when truly not configured, or when explicitly opened
-  const showSetup = !isConfigured || forceOpen
+  // Only show modal after localStorage has been read — avoids flash on every load
+  const showSetup = _hasHydrated && (!isConfigured || forceOpen)
 
   // Start SSE connection once configured
   useSSE()
