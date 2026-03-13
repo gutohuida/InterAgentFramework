@@ -1,2 +1,9 @@
-# Deprecated — build is now included in docker-compose.yml directly.
-# Use: docker compose up --build -d
+# For contributors — builds from local source instead of GitHub.
+#
+# Usage (from hub/ directory):
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up --build -d
+
+services:
+  hub:
+    build:
+      context: .

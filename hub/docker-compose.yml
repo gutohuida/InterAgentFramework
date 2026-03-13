@@ -1,6 +1,7 @@
 services:
   hub:
-    build: .
+    build:
+      context: https://github.com/gutohuida/AgentWeave.git#master:hub
     image: agentweave-hub:latest
     ports:
       - "${AW_PORT:-8000}:8000"
