@@ -1,13 +1,15 @@
 """FastAPI application factory + lifespan."""
 
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .api.v1 import v1_router
+from .config import settings
 from .db.engine import init_db
 
 UI_DIST = Path(__file__).parent / "static" / "ui"
@@ -46,11 +48,19 @@ def create_app() -> FastAPI:
 
         @app.get("/{full_path:path}", include_in_schema=False)
         async def serve_spa(full_path: str):
-            # Let API and health routes pass through (handled above)
             if full_path.startswith("api/") or full_path == "health":
                 raise HTTPException(404)
-            index = UI_DIST / "index.html"
-            return FileResponse(str(index))
+
+            # Inject runtime config so the dashboard connects automatically.
+            # The Hub is serving the dashboard, so it already knows its own key.
+            html = (UI_DIST / "index.html").read_text()
+            config = json.dumps({
+                "apiKey": settings.aw_bootstrap_api_key,
+                "projectId": settings.aw_bootstrap_project_id,
+            })
+            script = f"<script>window.__AW_CONFIG__={config};</script>"
+            html = html.replace("</head>", f"{script}</head>")
+            return HTMLResponse(html)
 
     return app
 
@@ -61,7 +71,6 @@ app = create_app()
 def run() -> None:
     """Entry point for `agentweave-hub` CLI command."""
     import uvicorn
-    from .config import settings
 
     uvicorn.run("hub.main:app", host="0.0.0.0", port=settings.aw_port, reload=False)
 
