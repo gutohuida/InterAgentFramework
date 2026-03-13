@@ -1,36 +1,44 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 
-interface ConfigState {
+const STORAGE_KEY = 'agentweave-config'
+
+interface StoredConfig {
   apiKey: string
   hubUrl: string
   projectId: string
-  isConfigured: boolean
-  _hasHydrated: boolean
-  setConfig: (apiKey: string, hubUrl: string, projectId: string) => void
-  clearConfig: () => void
-  setHasHydrated: (v: boolean) => void
 }
 
-export const useConfigStore = create<ConfigState>()(
-  persist(
-    (set) => ({
-      apiKey: '',
-      hubUrl: 'http://localhost:8000',
-      projectId: 'proj-default',
-      isConfigured: false,
-      _hasHydrated: false,
-      setConfig: (apiKey, hubUrl, projectId) =>
-        set({ apiKey, hubUrl, projectId, isConfigured: !!apiKey }),
-      clearConfig: () =>
-        set({ apiKey: '', hubUrl: 'http://localhost:8000', projectId: 'proj-default', isConfigured: false }),
-      setHasHydrated: (v) => set({ _hasHydrated: v }),
-    }),
-    {
-      name: 'agentweave-config',
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true)
-      },
-    }
-  )
-)
+function loadFromStorage(): StoredConfig {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw) as StoredConfig
+  } catch {}
+  return { apiKey: '', hubUrl: 'http://localhost:8000', projectId: 'proj-default' }
+}
+
+function saveToStorage(config: StoredConfig) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+  } catch {}
+}
+
+interface ConfigState extends StoredConfig {
+  isConfigured: boolean
+  setConfig: (apiKey: string, hubUrl: string, projectId: string) => void
+  clearConfig: () => void
+}
+
+const initial = loadFromStorage()
+
+export const useConfigStore = create<ConfigState>()((set) => ({
+  ...initial,
+  isConfigured: !!initial.apiKey,
+  setConfig: (apiKey, hubUrl, projectId) => {
+    saveToStorage({ apiKey, hubUrl, projectId })
+    set({ apiKey, hubUrl, projectId, isConfigured: !!apiKey })
+  },
+  clearConfig: () => {
+    localStorage.removeItem(STORAGE_KEY)
+    set({ apiKey: '', hubUrl: 'http://localhost:8000', projectId: 'proj-default', isConfigured: false })
+  },
+}))
