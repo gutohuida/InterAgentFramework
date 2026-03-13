@@ -1,6 +1,6 @@
 services:
   hub:
-    image: agentweave-hub:latest
+    image: ghcr.io/gutohuida/agentweave-hub:latest
     ports:
       - "${AW_PORT:-8000}:8000"
     volumes:
