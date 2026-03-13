@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchWithAuth, getJson } from './client'
+import { useConfigStore } from '@/store/configStore'
 
 export interface Message {
   id: string
@@ -16,10 +17,12 @@ export interface Message {
 }
 
 export function useMessages(agent?: string) {
+  const { isConfigured } = useConfigStore()
   const params = agent ? `?agent=${encodeURIComponent(agent)}` : ''
   return useQuery<Message[]>({
     queryKey: ['messages', agent],
     queryFn: () => getJson<Message[]>(`/api/v1/messages${params}`),
+    enabled: isConfigured,
   })
 }
 

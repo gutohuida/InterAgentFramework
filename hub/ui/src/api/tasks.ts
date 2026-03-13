@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getJson, patchJson } from './client'
+import { useConfigStore } from '@/store/configStore'
 
 export interface Task {
   id: string
@@ -14,9 +15,11 @@ export interface Task {
 }
 
 export function useTasks() {
+  const { isConfigured } = useConfigStore()
   return useQuery<Task[]>({
     queryKey: ['tasks'],
     queryFn: () => getJson<Task[]>('/api/v1/tasks'),
+    enabled: isConfigured,
   })
 }
 

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getJson, patchJson } from './client'
+import { useConfigStore } from '@/store/configStore'
 
 export interface Question {
   id: string
@@ -14,10 +15,12 @@ export interface Question {
 }
 
 export function useQuestions(answered?: boolean) {
+  const { isConfigured } = useConfigStore()
   const params = answered !== undefined ? `?answered=${answered}` : ''
   return useQuery<Question[]>({
     queryKey: ['questions', answered],
     queryFn: () => getJson<Question[]>(`/api/v1/questions${params}`),
+    enabled: isConfigured,
   })
 }
 

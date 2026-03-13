@@ -19,8 +19,10 @@ export async function fetchWithAuth(path: string, options: RequestInit = {}): Pr
     },
   })
   if (res.status === 401) {
-    // signal to the app to show setup modal
-    window.dispatchEvent(new CustomEvent('auth-error'))
+    // Only fire auth-error if we had a key (revoked/expired), not when unconfigured
+    if (useConfigStore.getState().isConfigured) {
+      window.dispatchEvent(new CustomEvent('auth-error'))
+    }
   }
   if (!res.ok) {
     const text = await res.text()

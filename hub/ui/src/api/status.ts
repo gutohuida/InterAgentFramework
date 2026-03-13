@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getJson } from './client'
+import { useConfigStore } from '@/store/configStore'
 
 export interface StatusData {
   project_id: string
@@ -11,9 +12,11 @@ export interface StatusData {
 }
 
 export function useStatus() {
+  const { isConfigured } = useConfigStore()
   return useQuery<StatusData>({
     queryKey: ['status'],
     queryFn: () => getJson<StatusData>('/api/v1/status'),
     refetchInterval: 30_000,
+    enabled: isConfigured,
   })
 }
