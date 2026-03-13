@@ -45,6 +45,8 @@ async def ask_question(
 @router.get("", response_model=List[QuestionResponse])
 async def list_questions(
     answered: Optional[bool] = Query(None),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
     project: Tuple[str, str] = Depends(get_project),
     session: AsyncSession = Depends(get_session),
 ):
@@ -52,7 +54,7 @@ async def list_questions(
     q = select(Question).where(Question.project_id == project_id)
     if answered is not None:
         q = q.where(Question.answered == answered)
-    q = q.order_by(Question.created_at)
+    q = q.order_by(Question.created_at).offset(offset).limit(limit)
     result = await session.execute(q)
     return result.scalars().all()
 

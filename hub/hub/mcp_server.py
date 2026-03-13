@@ -33,12 +33,6 @@ mcp = FastMCP(
     ),
 )
 
-# Cached at module load — avoids os.environ lookup on every tool call
-_BASE_URL: str = os.environ.get("HUB_URL", "http://localhost:8000")
-_API_KEY: str = os.environ.get("HUB_API_KEY", "")
-_PROJECT_ID: str = os.environ.get("HUB_PROJECT_ID", "proj-default")
-
-
 # ---------------------------------------------------------------------------
 # Internal helper — makes authenticated requests to the Hub REST API
 # ---------------------------------------------------------------------------
@@ -51,12 +45,13 @@ def _hub_request(
 ) -> Any:
     """Make an authenticated request to the Hub REST API.
 
-    Uses HUB_URL, HUB_API_KEY, and HUB_PROJECT_ID (read once at startup).
+    Reads HUB_URL, HUB_API_KEY, and HUB_PROJECT_ID lazily from the environment
+    on each call so that the server process can set/override them after import.
     Raises RuntimeError on non-2xx responses.
     """
-    base_url = _BASE_URL
-    api_key = _API_KEY
-    project_id = _PROJECT_ID
+    base_url = os.environ.get("HUB_URL", "http://localhost:8000")
+    api_key = os.environ.get("HUB_API_KEY", "")
+    project_id = os.environ.get("HUB_PROJECT_ID", "proj-default")
 
     url = f"{base_url}/api/v1{path}"
     if params:
@@ -236,7 +231,9 @@ def update_task(task_id: str, status: str, agent: str = "") -> Dict[str, Any]:
     under_review, revision_needed, approved, rejected.
 
     Args:
-        task_id: Task ID to update
+        task_id: Task ID to update — must be the 'id' field from list_tasks() or
+                 create_task() (e.g. "task-abc123"). Do NOT use status names like
+                 "pending" as task IDs.
         status: New status value
         agent: Your agent name (for logging)
 
@@ -253,8 +250,12 @@ def update_task(task_id: str, status: str, agent: str = "") -> Dict[str, Any]:
 def get_status() -> Dict[str, Any]:
     """Get project status: message counts, task counts, active agents.
 
+    NOTE: task_counts is a dict of {status_name: count} (e.g. {"pending": 2}).
+    The keys are status names, NOT task IDs. To get task IDs and details,
+    call list_tasks() instead, then use the returned 'id' field with update_task().
+
     Returns:
-        StatusResponse dict.
+        StatusResponse dict with task_counts, message_counts, agents_active, etc.
     """
     try:
         return _hub_request("GET", "/status")

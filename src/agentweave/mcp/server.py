@@ -25,7 +25,7 @@ except ImportError as e:
     ) from e
 
 from ..constants import MESSAGE_TYPES, PRIORITIES, TASK_STATUSES
-from ..locking import lock
+from ..locking import lock, LockError
 from ..messaging import Message, MessageBus
 from ..task import Task
 from ..transport import get_transport
@@ -166,17 +166,20 @@ def update_task(task_id: str, status: str, agent: str = "") -> Dict[str, Any]:
     if status not in TASK_STATUSES:
         return {"error": f"Invalid status '{status}'. Valid: {', '.join(TASK_STATUSES)}"}
 
-    with lock(f"task-{task_id}"):
-        task = Task.load(task_id)
-        if task is None:
-            return {"error": f"Task '{task_id}' not found"}
+    try:
+        with lock(f"task-{task_id}"):
+            task = Task.load(task_id)
+            if task is None:
+                return {"error": f"Task '{task_id}' not found"}
 
-        task.update(agent=agent or None, status=status)
+            task.update(agent=agent or None, status=status)
 
-        if status in ("approved", "rejected"):
-            task.move_to_completed()
-        else:
-            task.save()
+            if status in ("approved", "rejected"):
+                task.move_to_completed()
+            else:
+                task.save()
+    except LockError:
+        return {"error": "Task is locked by another operation; retry shortly"}
 
     return task.to_dict()
 

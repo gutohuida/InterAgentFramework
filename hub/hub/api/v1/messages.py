@@ -47,6 +47,8 @@ async def create_message(
 @router.get("", response_model=List[MessageResponse])
 async def list_messages(
     agent: Optional[str] = Query(None),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
     project: Tuple[str, str] = Depends(get_project),
     session: AsyncSession = Depends(get_session),
 ):
@@ -54,7 +56,7 @@ async def list_messages(
     q = select(Message).where(Message.project_id == project_id, Message.read == False)  # noqa: E712
     if agent:
         q = q.where(Message.recipient == agent)
-    q = q.order_by(Message.timestamp)
+    q = q.order_by(Message.timestamp).offset(offset).limit(limit)
     result = await session.execute(q)
     return result.scalars().all()
 

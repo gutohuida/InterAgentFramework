@@ -3,7 +3,13 @@
 from datetime import datetime
 from typing import Any, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+_TASK_STATUSES = [
+    "pending", "assigned", "in_progress", "completed",
+    "under_review", "revision_needed", "approved", "rejected",
+]
+_PRIORITIES = ["low", "medium", "high", "critical"]
 
 
 class TaskCreate(BaseModel):
@@ -21,6 +27,20 @@ class TaskCreate(BaseModel):
     id: Optional[str] = None
     created_at: Optional[str] = None
 
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str) -> str:
+        if v not in _TASK_STATUSES:
+            raise ValueError(f"status must be one of {_TASK_STATUSES}")
+        return v
+
+    @field_validator("priority")
+    @classmethod
+    def validate_priority(cls, v: str) -> str:
+        if v not in _PRIORITIES:
+            raise ValueError(f"priority must be one of {_PRIORITIES}")
+        return v
+
 
 class TaskUpdate(BaseModel):
     status: Optional[str] = None
@@ -28,6 +48,20 @@ class TaskUpdate(BaseModel):
     assignee: Optional[str] = None
     description: Optional[str] = None
     notes: Optional[Any] = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in _TASK_STATUSES:
+            raise ValueError(f"status must be one of {_TASK_STATUSES}")
+        return v
+
+    @field_validator("priority")
+    @classmethod
+    def validate_priority(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in _PRIORITIES:
+            raise ValueError(f"priority must be one of {_PRIORITIES}")
+        return v
 
 
 class TaskResponse(BaseModel):

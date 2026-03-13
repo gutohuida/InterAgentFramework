@@ -15,13 +15,16 @@ COPY pyproject.toml ./
 COPY hub/ ./hub/
 COPY alembic.ini ./
 
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
 
 # Copy built UI into hub static directory
 COPY --from=ui-builder /app/ui/dist /app/hub/static/ui
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${AW_PORT:-8000}/health')"
 
 # Run migrations then start server
 CMD ["sh", "-c", "alembic upgrade head && uvicorn hub.main:app --host 0.0.0.0 --port ${AW_PORT:-8000}"]

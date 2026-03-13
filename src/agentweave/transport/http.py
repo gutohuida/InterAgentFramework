@@ -23,6 +23,8 @@ from .base import BaseTransport
 class HttpTransport(BaseTransport):
     """Transport that delegates to an AgentWeave Hub via HTTP REST API."""
 
+    poll_interval: float = 5.0
+
     def __init__(self, url: str, api_key: str, project_id: str):
         self.url = url.rstrip("/")
         self.api_key = api_key
@@ -137,3 +139,42 @@ class HttpTransport(BaseTransport):
 
     def get_transport_type(self) -> str:
         return "http"
+
+    # ------------------------------------------------------------------
+    # Extended Hub methods (not in BaseTransport ABC)
+    # ------------------------------------------------------------------
+
+    def update_task_status(self, task_id: str, status: str) -> bool:
+        """PATCH /api/v1/tasks/{id} — update task status on Hub."""
+        try:
+            self._request("PATCH", f"/tasks/{task_id}", {"status": status})
+            return True
+        except RuntimeError:
+            return False
+
+    def ask_question(
+        self, from_agent: str, question: str, blocking: bool = False
+    ) -> Optional[str]:
+        """POST /api/v1/questions — post a question for the human user.
+
+        Returns the question ID, or None on failure.
+        """
+        try:
+            result = self._request(
+                "POST",
+                "/questions",
+                {"from_agent": from_agent, "question": question, "blocking": blocking},
+            )
+            return result.get("id")
+        except RuntimeError:
+            return None
+
+    def get_answer(self, question_id: str) -> Optional[Dict[str, Any]]:
+        """GET /api/v1/questions/{id} — check if a question has been answered.
+
+        Returns the question dict (with 'answered' and 'answer' fields), or None on failure.
+        """
+        try:
+            return self._request("GET", f"/questions/{question_id}")
+        except RuntimeError:
+            return None

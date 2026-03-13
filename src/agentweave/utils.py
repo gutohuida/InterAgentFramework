@@ -35,7 +35,7 @@ def ensure_dirs() -> None:
 
 def generate_id(prefix: str = "id") -> str:
     """Generate a unique ID with prefix."""
-    return f"{prefix}-{str(uuid.uuid4())[:6]}"
+    return f"{prefix}-{str(uuid.uuid4())[:8]}"
 
 
 def now_iso() -> str:

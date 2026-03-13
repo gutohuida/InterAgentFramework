@@ -36,6 +36,7 @@ is local-only and gitignored. archive_message() adds to the seen set.
 """
 
 import json
+import re
 import subprocess
 import time
 import uuid
@@ -348,7 +349,10 @@ class GitTransport(BaseTransport):
             stem = sf[:-5] if sf.endswith(".json") else sf
             if "-status-" in stem:
                 task_id_part, rest = stem.split("-status-", 1)
-                new_status = rest.split("-")[0]
+                # Use regex to isolate the status from the trailing timestamp.
+                # The iso_ts always starts with digits (year), so split there.
+                _m = re.match(r"^(.+?)-\d{4}", rest)
+                new_status = _m.group(1) if _m else rest.split("-")[0]
                 status_map[task_id_part] = new_status
 
         result = []

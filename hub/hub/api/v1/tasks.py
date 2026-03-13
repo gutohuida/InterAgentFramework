@@ -58,6 +58,8 @@ async def create_task(
 async def list_tasks(
     agent: Optional[str] = Query(None),
     task_status: Optional[str] = Query(None, alias="status"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
     project: Tuple[str, str] = Depends(get_project),
     session: AsyncSession = Depends(get_session),
 ):
@@ -67,7 +69,7 @@ async def list_tasks(
         q = q.where(Task.assignee == agent)
     if task_status:
         q = q.where(Task.status == task_status)
-    q = q.order_by(Task.created_at)
+    q = q.order_by(Task.created_at).offset(offset).limit(limit)
     result = await session.execute(q)
     return result.scalars().all()
 

@@ -3,7 +3,9 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+_MESSAGE_TYPES = ["message", "delegation", "review", "discussion"]
 
 
 class MessageCreate(BaseModel):
@@ -19,6 +21,13 @@ class MessageCreate(BaseModel):
     timestamp: Optional[str] = None
 
     model_config = {"populate_by_name": True}
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v: str) -> str:
+        if v not in _MESSAGE_TYPES:
+            raise ValueError(f"type must be one of {_MESSAGE_TYPES}")
+        return v
 
 
 class MessageResponse(BaseModel):

@@ -293,7 +293,8 @@ def cmd_status(_args: argparse.Namespace) -> int:
     print(f"\n[WATCH] Watchdog: {watchdog_status}")
 
     # Per-agent info
-    all_agents = session.agent_names or ["claude", "kimi"]
+    from .constants import DEFAULT_AGENTS
+    all_agents = session.agent_names or DEFAULT_AGENTS
     active_tasks = Task.list_all(active_only=True)
 
     print(f"\n[AGENTS]")
@@ -342,8 +343,9 @@ def cmd_summary(_args: argparse.Namespace) -> int:
     print()
     
     # Tasks by status — dynamic across all session agents
+    from .constants import DEFAULT_AGENTS
     all_tasks = Task.list_all()
-    all_agents = session.agent_names or ["claude", "kimi"]
+    all_agents = session.agent_names or DEFAULT_AGENTS
 
     pending_by_agent = {
         ag: [t for t in all_tasks if t.assignee == ag and t.status in ["pending", "assigned"]]
@@ -758,10 +760,10 @@ def cmd_inbox(args: argparse.Namespace) -> int:
                 messages += MessageBus.get_inbox(ag)
         else:
             # No session: fall back to default agents
-            messages = (
-                MessageBus.get_inbox("claude") +
-                MessageBus.get_inbox("kimi")
-            )
+            from .constants import DEFAULT_AGENTS
+            messages = []
+            for _ag in DEFAULT_AGENTS:
+                messages += MessageBus.get_inbox(_ag)
 
     if not messages:
         print_info(f"No messages for {agent or 'anyone'}")

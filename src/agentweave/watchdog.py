@@ -18,6 +18,7 @@ class Watchdog:
         poll_interval: float = 5.0,
         transport=None,
         retry_after: Optional[float] = None,
+        agent: Optional[str] = None,
     ):
         """Initialize watchdog.
 
@@ -40,9 +41,10 @@ class Watchdog:
         else:
             self.poll_interval = poll_interval
 
+        self.agent = agent
         self.known_messages: Set[str] = set()
         self.known_tasks: Set[str] = set()
-        self.known_remote_files: Set[str] = set()  # for git/http transport
+        self.known_remote_files: Set[str] = set()  # for git transport
         self.running = False
         self.retry_after = retry_after  # seconds; None = no retry
         self.pinged_at: Dict[str, float] = {}  # msg_id -> unix time of last ping
@@ -98,6 +100,11 @@ class Watchdog:
         if transport_type == "local":
             print(f"   Watching: {MESSAGES_PENDING_DIR}")
             print(f"   Watching: {TASKS_ACTIVE_DIR}")
+        elif transport_type == "http":
+            hub_url = getattr(self.transport, "url", "?")
+            agent_label = self.agent or "all agents"
+            print(f"   Watching: {hub_url} (polling every {self.poll_interval}s)")
+            print(f"   Agent: {agent_label}")
         else:
             remote = getattr(self.transport, "remote", "?")
             branch = getattr(self.transport, "branch", "?")
@@ -112,6 +119,8 @@ class Watchdog:
         if transport_type == "local":
             self.known_messages = self._scan_messages()
             self.known_tasks = self._scan_tasks()
+        elif transport_type == "http":
+            self._init_http_state()
         else:
             self.transport._fetch()
             self.known_remote_files = set(self.transport.list_remote_filenames())
@@ -129,8 +138,11 @@ class Watchdog:
 
     def _check_once(self):
         """Check for changes once."""
-        if self.transport.get_transport_type() == "local":
+        transport_type = self.transport.get_transport_type()
+        if transport_type == "local":
             self._check_once_local()
+        elif transport_type == "http":
+            self._check_once_http()
         else:
             self._check_once_remote()
 
@@ -184,6 +196,35 @@ class Watchdog:
 
         self.known_tasks = current_tasks
 
+    def _init_http_state(self):
+        """Seed known message/task IDs from Hub so we don't re-fire on startup."""
+        messages = self.transport.get_pending_messages(self.agent or "")
+        for msg in messages:
+            msg_id = msg.get("id", "")
+            if msg_id:
+                self.known_messages.add(msg_id)
+        tasks = self.transport.get_active_tasks(self.agent or None)
+        for task in tasks:
+            task_id = task.get("id", "")
+            if task_id:
+                self.known_tasks.add(task_id)
+
+    def _check_once_http(self):
+        """Poll Hub REST API for new messages and tasks."""
+        messages = self.transport.get_pending_messages(self.agent or "")
+        for msg in messages:
+            msg_id = msg.get("id", "")
+            if msg_id and msg_id not in self.known_messages:
+                self.known_messages.add(msg_id)
+                self.callback("new_message", msg)
+
+        tasks = self.transport.get_active_tasks(self.agent or None)
+        for task in tasks:
+            task_id = task.get("id", "")
+            if task_id and task_id not in self.known_tasks:
+                self.known_tasks.add(task_id)
+                self.callback("new_task", task)
+
     def _check_once_remote(self):
         """Scan remote transport for new files without consuming messages.
 
@@ -213,16 +254,19 @@ class Watchdog:
 
 
 def _agent_ping_cmd(agent: str, prompt: str) -> list:
-    """Return the CLI command to ping an agent with a prompt."""
+    """Return the CLI command to ping an agent with a prompt.
+
+    Kimi uses --print; all others invoke the agent's own CLI by name with -p.
+    """
     if agent == "kimi":
         return ["kimi", "--print", "-p", prompt]
-    return ["claude", "-p", prompt]
+    return [agent, "-p", prompt]
 
 
 def _check_cli_available(agent: str) -> bool:
     """Check if an agent's CLI is available in PATH."""
     import shutil
-    cli_name = "kimi" if agent == "kimi" else "claude"
+    cli_name = "kimi" if agent == "kimi" else agent
     return shutil.which(cli_name) is not None
 
 
@@ -333,6 +377,7 @@ def main():
     watchdog = Watchdog(
         poll_interval=args.interval or 5.0,
         retry_after=args.retry_after,
+        agent=args.agent,
     )
 
     if args.auto_ping:

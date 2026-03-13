@@ -1,10 +1,12 @@
 """FastAPI application factory + lifespan."""
 
 import json
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -30,6 +32,18 @@ def create_app() -> FastAPI:
         ),
         version="0.1.0",
         lifespan=lifespan,
+    )
+
+    # CORS — origins configurable via AW_CORS_ORIGINS env var (comma-separated).
+    # Default: same-origin only (empty list = browser blocks cross-origin).
+    _cors_origins_raw = os.environ.get("AW_CORS_ORIGINS", "")
+    _cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     @app.get("/health", include_in_schema=False)

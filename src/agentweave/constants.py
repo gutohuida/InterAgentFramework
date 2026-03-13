@@ -1,6 +1,7 @@
 """Constants for the AgentWeave framework."""
 
 import re
+from enum import Enum
 from pathlib import Path
 
 # Directory structure
@@ -28,7 +29,14 @@ WATCHDOG_HEARTBEAT_FILE = AGENTWEAVE_DIR / "watchdog.heartbeat"  # gitignored
 LOGS_DIR = AGENTWEAVE_DIR / "logs"
 EVENTS_LOG_FILE = LOGS_DIR / "events.jsonl"                # gitignored, machine-local
 
-# Transport
+# Transport types
+class TransportType(str, Enum):
+    """Pluggable transport backends."""
+    LOCAL = "local"
+    GIT = "git"
+    HTTP = "http"
+
+
 TRANSPORT_CONFIG_FILE = AGENTWEAVE_DIR / "transport.json"
 GIT_COLLAB_BRANCH = "agentweave/collab"
 GIT_SEEN_DIR = AGENTWEAVE_DIR / ".git_seen"  # local seen-set for git transport (gitignored)

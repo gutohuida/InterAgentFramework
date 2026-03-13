@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from .constants import MESSAGES_PENDING_DIR, MESSAGES_ARCHIVE_DIR, MESSAGE_TYPES
+from .constants import MESSAGES_PENDING_DIR, MESSAGES_ARCHIVE_DIR, MESSAGE_TYPES, TransportType
 from .utils import load_json, save_json, generate_id, now_iso
 
 
@@ -188,7 +188,7 @@ class MessageBus:
         """Mark a message as read via the active transport."""
         from .transport import get_transport
         t = get_transport()
-        if t.get_transport_type() == "local":
+        if t.get_transport_type() == TransportType.LOCAL:
             message = Message.load(message_id, pending=True)
             if message:
                 return message.mark_read()
