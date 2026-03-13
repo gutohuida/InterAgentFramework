@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useConfigStore } from '@/store/configStore'
 import { SetupModal } from '@/components/layout/SetupModal'
 import { StatusBar } from '@/components/layout/StatusBar'
@@ -13,20 +13,11 @@ type Page = 'messages' | 'tasks' | 'questions' | 'activity'
 
 export default function App() {
   const { isConfigured } = useConfigStore()
-  const [forceOpen, setForceOpen] = useState(false)
+  const [setupOpen, setSetupOpen] = useState(false)
   const [page, setPage] = useState<Page>('messages')
-
-  const showSetup = !isConfigured || forceOpen
 
   // Start SSE connection once configured
   useSSE()
-
-  // Listen for 401 auth errors
-  useEffect(() => {
-    const handler = () => setForceOpen(true)
-    window.addEventListener('auth-error', handler)
-    return () => window.removeEventListener('auth-error', handler)
-  }, [])
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -35,7 +26,7 @@ export default function App() {
         <Sidebar
           activePage={page}
           onNavigate={setPage}
-          onOpenSetup={() => setForceOpen(true)}
+          onOpenSetup={() => setSetupOpen(true)}
         />
         <main className="flex-1 overflow-auto">
           {page === 'messages' && <MessagesFeed />}
@@ -44,7 +35,7 @@ export default function App() {
           {page === 'activity' && <ActivityLog />}
         </main>
       </div>
-      <SetupModal open={showSetup} onClose={() => setForceOpen(false)} />
+      <SetupModal open={!isConfigured || setupOpen} onClose={() => setSetupOpen(false)} />
     </div>
   )
 }

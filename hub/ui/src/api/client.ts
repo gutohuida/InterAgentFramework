@@ -19,10 +19,7 @@ export async function fetchWithAuth(path: string, options: RequestInit = {}): Pr
     },
   })
   if (res.status === 401) {
-    // Only fire auth-error if we had a key (revoked/expired), not when unconfigured
-    if (useConfigStore.getState().isConfigured) {
-      window.dispatchEvent(new CustomEvent('auth-error'))
-    }
+    console.warn('[AgentWeave] 401 Unauthorized — check API key in .env or Settings')
   }
   if (!res.ok) {
     const text = await res.text()
