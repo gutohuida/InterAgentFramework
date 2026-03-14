@@ -1310,6 +1310,35 @@ def cmd_transport_pull(_args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_hub_heartbeat(args: argparse.Namespace) -> int:
+    """Publish an agent heartbeat to the Hub (HTTP transport only)."""
+    from .utils import load_json as _load_json
+
+    config = _load_json(TRANSPORT_CONFIG_FILE)
+    if not config or config.get("type") != "http":
+        print_info("No HTTP transport configured — hub-heartbeat is a no-op.")
+        return 0
+
+    from .transport.http import HttpTransport
+
+    t = HttpTransport(
+        url=config["url"],
+        api_key=config["api_key"],
+        project_id=config["project_id"],
+    )
+    agent = args.agent
+    status = args.status or "active"
+    message = args.message
+
+    ok = t.push_heartbeat(agent, status=status, message=message)
+    if ok:
+        print_success(f"Heartbeat sent: {agent} [{status}]")
+    else:
+        print_error("Failed to send heartbeat — check Hub connectivity.")
+        return 1
+    return 0
+
+
 def cmd_transport_disable(_args: argparse.Namespace) -> int:
     """Disable transport and revert to local filesystem."""
     if not TRANSPORT_CONFIG_FILE.exists():
@@ -1718,6 +1747,20 @@ For more help: https://github.com/gutohuida/AgentWeave
     # transport disable
     transport_subparsers.add_parser("disable", help="Disable transport, revert to local")
 
+    # Hub heartbeat (http transport only)
+    hb_parser = subparsers.add_parser(
+        "hub-heartbeat",
+        help="Publish agent status to the Hub (requires HTTP transport)",
+    )
+    hb_parser.add_argument("--agent", "-a", required=True, help="Agent name")
+    hb_parser.add_argument(
+        "--status", "-s",
+        choices=["active", "idle", "waiting"],
+        default="active",
+        help="Agent status (default: active)",
+    )
+    hb_parser.add_argument("--message", "-m", help="Optional status message")
+
     # Reply to agent questions (Hub / http transport only)
     reply_parser = subparsers.add_parser(
         "reply",
@@ -1817,6 +1860,8 @@ def main(args: Optional[List[str]] = None) -> int:
                 return 0
         elif parsed_args.command == "reply":
             return cmd_reply(parsed_args)
+        elif parsed_args.command == "hub-heartbeat":
+            return cmd_hub_heartbeat(parsed_args)
         else:
             parser.print_help()
             return 0

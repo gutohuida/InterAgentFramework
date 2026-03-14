@@ -125,3 +125,37 @@ class Question(Base):
     answered_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     project: Mapped["Project"] = relationship(back_populates="questions")
+
+
+class EventLog(Base):
+    __tablename__ = "event_logs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    agent: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    data: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_event_logs_project_ts", "project_id", "timestamp"),
+    )
+
+
+class AgentHeartbeat(Base):
+    __tablename__ = "agent_heartbeats"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    project_id: Mapped[str] = mapped_column(String(64), ForeignKey("projects.id"), nullable=False)
+    agent: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_agent_heartbeats_project_agent", "project_id", "agent"),
+    )

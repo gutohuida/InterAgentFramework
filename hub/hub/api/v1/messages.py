@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...auth import get_project
@@ -13,7 +13,7 @@ from ...db.models import Message
 from ...schemas.common import SuccessResponse
 from ...schemas.messages import MessageCreate, MessageResponse
 from ...sse import sse_manager
-from ...utils import short_id
+from ...utils import persist_event, short_id
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -41,6 +41,7 @@ async def create_message(
     await session.commit()
     await session.refresh(msg)
     await sse_manager.broadcast(project_id, "message_created", _msg_dict(msg))
+    await persist_event(session, project_id, "message_created", _msg_dict(msg), agent=msg.sender)
     return msg
 
 
@@ -49,14 +50,30 @@ async def list_messages(
     agent: Optional[str] = Query(None),
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
+    history: bool = Query(False),
+    sort: str = Query("asc"),
+    conversation: Optional[str] = Query(None),
     project: Tuple[str, str] = Depends(get_project),
     session: AsyncSession = Depends(get_session),
 ):
     project_id, _ = project
-    q = select(Message).where(Message.project_id == project_id, Message.read == False)  # noqa: E712
+    q = select(Message).where(Message.project_id == project_id)
+    if not history:
+        q = q.where(Message.read == False)  # noqa: E712
     if agent:
         q = q.where(Message.recipient == agent)
-    q = q.order_by(Message.timestamp).offset(offset).limit(limit)
+    if conversation:
+        parts = conversation.split(":", 1)
+        if len(parts) == 2:
+            a, b = parts[0], parts[1]
+            q = q.where(
+                or_(
+                    and_(Message.sender == a, Message.recipient == b),
+                    and_(Message.sender == b, Message.recipient == a),
+                )
+            )
+    order_col = Message.timestamp.desc() if sort == "desc" else Message.timestamp.asc()
+    q = q.order_by(order_col).offset(offset).limit(limit)
     result = await session.execute(q)
     return result.scalars().all()
 
@@ -75,6 +92,7 @@ async def mark_read(
     msg.read_at = datetime.now(timezone.utc)
     await session.commit()
     await sse_manager.broadcast(project_id, "message_read", {"id": message_id})
+    await persist_event(session, project_id, "message_read", {"id": message_id})
     return SuccessResponse(message="Message marked as read")
 
 

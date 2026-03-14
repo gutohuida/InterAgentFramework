@@ -12,7 +12,7 @@ from ...db.engine import get_session
 from ...db.models import Task
 from ...schemas.tasks import TaskCreate, TaskResponse, TaskUpdate
 from ...sse import sse_manager
-from ...utils import short_id
+from ...utils import persist_event, short_id
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -51,6 +51,11 @@ async def create_task(
     await session.commit()
     await session.refresh(task)
     await sse_manager.broadcast(project_id, "task_created", {"id": task_id, "title": body.title})
+    await persist_event(
+        session, project_id, "task_created",
+        {"id": task_id, "title": body.title},
+        agent=body.assignee,
+    )
     return task
 
 
@@ -112,4 +117,9 @@ async def update_task(
     await session.commit()
     await session.refresh(task)
     await sse_manager.broadcast(project_id, "task_updated", {"id": task_id, "status": task.status})
+    await persist_event(
+        session, project_id, "task_updated",
+        {"id": task_id, "status": task.status},
+        agent=task.assignee,
+    )
     return task

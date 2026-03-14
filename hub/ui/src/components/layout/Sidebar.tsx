@@ -1,9 +1,10 @@
-import { MessageSquare, CheckSquare, HelpCircle, Activity, Settings } from 'lucide-react'
+import { MessageSquare, CheckSquare, HelpCircle, Activity, Settings, Terminal, Bot } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useQuestions } from '@/api/questions'
 import { useMessages } from '@/api/messages'
+import { useAgents } from '@/api/agents'
 
-type Page = 'messages' | 'tasks' | 'questions' | 'activity'
+type Page = 'messages' | 'tasks' | 'questions' | 'activity' | 'logs' | 'agents'
 
 interface SidebarProps {
   activePage: Page
@@ -14,15 +15,19 @@ interface SidebarProps {
 export function Sidebar({ activePage, onNavigate, onOpenSetup }: SidebarProps) {
   const { data: questions } = useQuestions(false)
   const { data: messages } = useMessages()
+  const { data: agents } = useAgents()
 
   const unanswered = questions?.length ?? 0
   const unread = messages?.filter((m) => !m.read).length ?? 0
+  const activeAgents = agents?.filter((a) => a.status === 'active').length ?? 0
 
   const navItems: { id: Page; label: string; icon: React.ElementType; badge?: number; danger?: boolean }[] = [
     { id: 'messages', label: 'Messages', icon: MessageSquare, badge: unread },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'questions', label: 'Questions', icon: HelpCircle, badge: unanswered, danger: unanswered > 0 },
     { id: 'activity', label: 'Activity', icon: Activity },
+    { id: 'logs', label: 'Logs', icon: Terminal },
+    { id: 'agents', label: 'Agents', icon: Bot, badge: activeAgents },
   ]
 
   return (

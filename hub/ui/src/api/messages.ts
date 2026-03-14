@@ -26,6 +26,23 @@ export function useMessages(agent?: string) {
   })
 }
 
+export interface MessageHistoryOpts {
+  sort?: 'asc' | 'desc'
+  conversation?: string
+}
+
+export function useMessageHistory(opts: MessageHistoryOpts = {}) {
+  const { isConfigured } = useConfigStore()
+  const params = new URLSearchParams({ history: 'true' })
+  if (opts.sort) params.set('sort', opts.sort)
+  if (opts.conversation) params.set('conversation', opts.conversation)
+  return useQuery<Message[]>({
+    queryKey: ['messages', 'history', opts],
+    queryFn: () => getJson<Message[]>(`/api/v1/messages?${params}`),
+    enabled: isConfigured,
+  })
+}
+
 export function useMarkRead() {
   const queryClient = useQueryClient()
   return useMutation({

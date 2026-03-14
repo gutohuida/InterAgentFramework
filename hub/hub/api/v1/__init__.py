@@ -7,6 +7,8 @@ from .tasks import router as tasks_router
 from .questions import router as questions_router
 from .status import router as status_router
 from .events import router as events_router
+from .logs import router as logs_router
+from .agents import router as agents_router
 
 v1_router = APIRouter(prefix="/api/v1")
 v1_router.include_router(messages_router)
@@ -14,3 +16,5 @@ v1_router.include_router(tasks_router)
 v1_router.include_router(questions_router)
 v1_router.include_router(status_router)
 v1_router.include_router(events_router)
+v1_router.include_router(logs_router)
+v1_router.include_router(agents_router)

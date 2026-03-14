@@ -17,6 +17,7 @@ const SSE_EVENT_TYPES = [
   'task_updated',
   'question_asked',
   'question_answered',
+  'agent_heartbeat',
 ]
 
 const listeners = new Set<SSEListener>()
@@ -86,6 +87,9 @@ export function useSSE(onEvent?: SSEListener) {
         case 'question_answered':
           queryClient.invalidateQueries({ queryKey: ['questions'] })
           queryClient.invalidateQueries({ queryKey: ['status'] })
+          break
+        case 'agent_heartbeat':
+          queryClient.invalidateQueries({ queryKey: ['agents'] })
           break
       }
       onEvent?.(event)

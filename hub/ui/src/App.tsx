@@ -7,9 +7,11 @@ import { MessagesFeed } from '@/components/messages/MessagesFeed'
 import { TasksBoard } from '@/components/tasks/TasksBoard'
 import { QuestionsPanel } from '@/components/questions/QuestionsPanel'
 import { ActivityLog } from '@/components/activity/ActivityLog'
+import { LogsView } from '@/components/logs/LogsView'
+import { AgentsPage } from '@/components/agents/AgentsPage'
 import { useSSE } from '@/hooks/useSSE'
 
-type Page = 'messages' | 'tasks' | 'questions' | 'activity'
+type Page = 'messages' | 'tasks' | 'questions' | 'activity' | 'logs' | 'agents'
 
 export default function App() {
   const { isConfigured } = useConfigStore()
@@ -28,11 +30,13 @@ export default function App() {
           onNavigate={setPage}
           onOpenSetup={() => setSetupOpen(true)}
         />
-        <main className="flex-1 overflow-auto">
-          {page === 'messages' && <MessagesFeed />}
-          {page === 'tasks' && <TasksBoard />}
-          {page === 'questions' && <QuestionsPanel />}
-          {page === 'activity' && <ActivityLog />}
+        <main className="flex-1 overflow-hidden">
+          {page === 'messages' && <div className="h-full overflow-auto"><MessagesFeed /></div>}
+          {page === 'tasks' && <div className="h-full overflow-auto"><TasksBoard /></div>}
+          {page === 'questions' && <div className="h-full overflow-auto"><QuestionsPanel /></div>}
+          {page === 'activity' && <div className="h-full overflow-auto"><ActivityLog /></div>}
+          {page === 'logs' && <div className="h-full flex flex-col"><LogsView /></div>}
+          {page === 'agents' && <div className="h-full flex flex-col"><AgentsPage /></div>}
         </main>
       </div>
       <SetupModal open={!isConfigured || setupOpen} onClose={() => setSetupOpen(false)} />

@@ -12,7 +12,7 @@ from ...db.engine import get_session
 from ...db.models import Question
 from ...schemas.questions import QuestionAnswer, QuestionCreate, QuestionResponse
 from ...sse import sse_manager
-from ...utils import short_id
+from ...utils import persist_event, short_id
 
 router = APIRouter(prefix="/questions", tags=["questions"])
 
@@ -38,6 +38,11 @@ async def ask_question(
     await sse_manager.broadcast(
         project_id, "question_asked",
         {"id": q_id, "from_agent": body.from_agent, "blocking": body.blocking}
+    )
+    await persist_event(
+        session, project_id, "question_asked",
+        {"id": q_id, "from_agent": body.from_agent, "blocking": body.blocking},
+        agent=body.from_agent,
     )
     return question
 
@@ -91,5 +96,9 @@ async def answer_question(
     await sse_manager.broadcast(
         project_id, "question_answered",
         {"id": question_id, "answer": body.answer}
+    )
+    await persist_event(
+        session, project_id, "question_answered",
+        {"id": question_id, "answer": body.answer},
     )
     return question

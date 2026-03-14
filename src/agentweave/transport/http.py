@@ -185,3 +185,14 @@ class HttpTransport(BaseTransport):
             return self._request("GET", f"/questions/{question_id}")
         except RuntimeError:
             return None
+
+    def push_heartbeat(self, agent: str, status: str = "active", message: Optional[str] = None) -> bool:
+        """POST /api/v1/agents/{name}/heartbeat — publish agent status to the Hub."""
+        try:
+            body: Dict[str, Any] = {"status": status}
+            if message:
+                body["message"] = message
+            self._request("POST", f"/agents/{agent}/heartbeat", body)
+            return True
+        except RuntimeError:
+            return False
